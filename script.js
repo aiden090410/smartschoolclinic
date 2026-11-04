@@ -1,5 +1,5 @@
 /**
- * 스마트 보건실 통합 관리 시스템 - 메인 스크립트 (script.js)
+ * 스마트 보건실 통합 관리 시스템 - 메인 연동 스크립트 (script.js)
  */
 
 const state = {
@@ -14,20 +14,59 @@ const state = {
   authToken: null,
 
   requests: [],
+  serverStats: null,
   
   idleTimer: null,
   completionTimer: null,
   resetCountdownInterval: null,
+  pollingTimer: null,
   
   isMockMode: false
 };
+
+// ==========================================
+// 0. GAS 웹 앱 통신 전용 래퍼 함수 (CORS & 통신 검증)
+// ==========================================
+async function fetchApi(action, payload = {}) {
+  if (!navigator.onLine) {
+    throw new Error("네트워크 연결이 끊어졌습니다. 인터넷 연결 상태를 확인해주세요.");
+  }
+
+  if (state.isMockMode) {
+    throw new Error("현재 시뮬레이션 모드입니다. CONFIG.GAS_WEB_APP_URL 설정을 확인하세요.");
+  }
+
+  const requestPayload = JSON.stringify({ action, ...payload });
+
+  try {
+    const response = await fetch(CONFIG.GAS_WEB_APP_URL, {
+      method: "POST",
+      body: requestPayload
+      // 명시적 application/json 헤더 생략으로 CORS OPTIONS Preflight 문제 회피
+    });
+
+    if (!response.ok) {
+      throw new Error(`서버 통신 실패 (HTTP 상태 코드: ${response.status})`);
+    }
+
+    const resJson = await response.json();
+    if (resJson.status === "ERROR") {
+      throw new Error(resJson.message || "서버 처리 중 오류가 발생했습니다.");
+    }
+
+    return resJson;
+  } catch (err) {
+    console.error(`[API Error - ${action}]:`, err);
+    throw err;
+  }
+}
 
 // ==========================================
 // 1. 앱 통합 컨트롤러 (App)
 // ==========================================
 const App = {
   init() {
-    console.log("스마트 보건실 프론트엔드 시스템 초기화");
+    console.log("LABIT 프론트엔드 연동 시스템 초기화");
     
     window.addEventListener("online", App.updateNetworkStatus);
     window.addEventListener("offline", App.updateNetworkStatus);
@@ -36,7 +75,6 @@ const App = {
     if (!CONFIG.GAS_WEB_APP_URL || CONFIG.GAS_WEB_APP_URL.trim() === "" || CONFIG.GAS_WEB_APP_URL.includes("YOUR_SCRIPT_ID")) {
       state.isMockMode = true;
       document.getElementById("mock-banner").classList.remove("hidden");
-      state.requests = [...CONFIG.MOCK_DATA.requests];
     }
 
     StudentFlow.renderVisitTypes();
@@ -65,6 +103,7 @@ const App = {
 
   goHome() {
     if (state.currentView === "teacher") {
+      TeacherFlow.stopPolling();
       state.currentView = "student";
       document.getElementById("view-teacher").classList.add("hidden");
       document.getElementById("view-student").classList.remove("hidden");
@@ -74,7 +113,8 @@ const App = {
 
   toggleAuthModal() {
     if (state.isLoggedIn) {
-      if (confirm("로그아웃 하시겠습니까?")) {
+      if (confirm("관리자 로그아웃 하시겠습니까?")) {
+        TeacherFlow.stopPolling();
         state.isLoggedIn = false;
         state.authToken = null;
         sessionStorage.removeItem("health_admin_token");
@@ -98,7 +138,7 @@ const App = {
     }
   },
 
-  showLoading(text = "서버와 통신 중입니다...") {
+  showLoading(text = "서버와 데이터를 동기화하는 중입니다...") {
     document.getElementById("loading-text").textContent = text;
     document.getElementById("loading-overlay").classList.remove("hidden");
   },
@@ -189,85 +229,56 @@ const StudentFlow = {
     StudentFlow.nextStep(4);
   },
 
-  submitFinalRequest() {
-    if (!navigator.onLine) {
-      alert("인터넷 연결이 끊겨 접수를 처리할 수 없습니다.");
-      return;
-    }
+  // 1. 학생 접수 → GAS submitRequest 실시간 연동
+  async submitFinalRequest() {
+    App.showLoading("서버에서 대기 번호를 발급받는 중입니다...");
 
-    App.showLoading("대기 번호를 발급받는 중입니다...");
-
-    const payload = {
-      action: "submitRequest",
-      student_id: `${state.studentInfo.grade}${state.studentInfo.class.padStart(2, '0')}${state.studentInfo.number.padStart(2, '0')}`,
-      student_name: state.studentInfo.name,
-      visit_type: state.selectedType.id,
-      detail_option: state.selectedDetail
-    };
-
-    if (state.isMockMode) {
-      setTimeout(() => {
-        App.hideLoading();
-        const prefix = state.selectedType.prefix;
-        const newNo = `${prefix}-0${state.requests.length + 1}`;
-        const mockTicket = {
-          id: `REQ-${Date.now()}`,
-          timestamp: new Date().toLocaleString(),
-          student_id: payload.student_id,
-          student_name: payload.student_name,
-          visit_type: payload.visit_type,
-          type_name: state.selectedType.name,
-          detail_option: payload.detail_option,
-          queue_no: newNo,
-          status: "WAITING"
-        };
-
-        state.requests.unshift(mockTicket);
-        state.currentTicket = mockTicket;
-        StudentFlow.showCompletionScreen(mockTicket);
-      }, 700);
-    } else {
-      fetch(CONFIG.GAS_WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP 상태: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        App.hideLoading();
-        if (data.status === "SUCCESS") {
-          state.currentTicket = data.ticket;
-          StudentFlow.showCompletionScreen(data.ticket);
-        } else {
-          alert(`접수 실패: ${data.message}`);
-        }
-      })
-      .catch(err => {
-        App.hideLoading();
-        console.error("접수 등록 통신 오류:", err);
-        alert(`서버 통신 오류가 발생했습니다. (상세 내용: ${err.message})`);
+    const studentId = `${state.studentInfo.grade}${state.studentInfo.class.padStart(2, '0')}${state.studentInfo.number.padStart(2, '0')}`;
+    
+    try {
+      const data = await fetchApi("submitRequest", {
+        student_id: studentId,
+        student_name: state.studentInfo.name,
+        visit_type: state.selectedType.id,
+        detail_option: state.selectedDetail
       });
+
+      App.hideLoading();
+
+      // 2. 접수 완료 화면 → 서버에서 발급한 대기번호 및 대기인원 표시
+      state.currentTicket = data.ticket;
+      StudentFlow.showCompletionScreen(data.ticket, data.waiting_ahead || 0);
+
+    } catch (err) {
+      App.hideLoading();
+      alert(`접수 신청에 실패했습니다.\n사유: ${err.message}`);
     }
   },
 
-  showCompletionScreen(ticket) {
+  showCompletionScreen(ticket, waitingAhead) {
     document.getElementById("txt-issued-ticket-no").textContent = ticket.queue_no;
-    const waitingAhead = state.requests.filter(r => r.visit_type === ticket.visit_type && r.status === "WAITING" && r.id !== ticket.id).length;
     document.getElementById("txt-waiting-ahead-count").textContent = `${waitingAhead}명`;
 
     StudentFlow.nextStep(6);
     StudentFlow.startCompletionTimer();
   },
 
-  cancelCurrentRequest() {
+  // 5. 대기열 관리 → 학생 접수 셀프 취소 연동
+  async cancelCurrentRequest() {
     if (!state.currentTicket) return;
 
-    if (confirm("정말로 접수를 취소하시겠습니까?")) {
-      state.requests = state.requests.filter(r => r.id !== state.currentTicket.id);
-      alert("접수가 취소되었습니다.");
-      StudentFlow.resetToStep1();
+    if (confirm("정말로 방문 접수를 취소하시겠습니까?")) {
+      App.showLoading("접수 취소를 서버에 반영 중입니다...");
+
+      try {
+        await fetchApi("cancelRequest", { request_id: state.currentTicket.id });
+        App.hideLoading();
+        alert("접수가 정상적으로 취소되었습니다.");
+        StudentFlow.resetToStep1();
+      } catch (err) {
+        App.hideLoading();
+        alert(`접수 취소 중 오류가 발생했습니다: ${err.message}`);
+      }
     }
   },
 
@@ -276,7 +287,7 @@ const StudentFlow = {
 
     if (state.studentStep >= 2 && state.studentStep <= 5) {
       state.idleTimer = setTimeout(() => {
-        alert("30초간 입력이 없어 첫 화면으로 초기화되었습니다.");
+        alert("30초간 입력이 없어 안전을 위해 첫 화면으로 초기화되었습니다.");
         StudentFlow.resetToStep1();
       }, CONFIG.TIMERS.IDLE_TIMEOUT_MS);
     }
@@ -288,7 +299,7 @@ const StudentFlow = {
 
     let timeLeft = 15;
     const txtCount = document.getElementById("txt-reset-countdown");
-    txtCount.textContent = timeLeft;
+    if (txtCount) txtCount.textContent = timeLeft;
 
     state.resetCountdownInterval = setInterval(() => {
       timeLeft--;
@@ -331,49 +342,29 @@ StudentFlow.nextStep = function(stepNumber) {
 // 3. 교사용 관리자 대시보드 (TeacherFlow)
 // ==========================================
 const TeacherFlow = {
-  handleLogin(e) {
+  // 3. 관리자 로그인 → 서버 측 인증 (adminLogin API)
+  async handleLogin(e) {
     e.preventDefault();
     const password = document.getElementById("input-admin-password").value;
 
-    App.showLoading("관리자 권한을 검증 중입니다...");
+    App.showLoading("서버에서 관리자 권한을 인증 중입니다...");
 
-    if (state.isMockMode) {
-      setTimeout(() => {
-        App.hideLoading();
-        state.isLoggedIn = true;
-        state.authToken = "MOCK-SESSION-TOKEN-1234";
-        sessionStorage.setItem("health_admin_token", state.authToken);
-        document.getElementById("modal-login").classList.add("hidden");
-        App.updateAuthUI();
-        TeacherFlow.openDashboard();
-      }, 500);
-    } else {
-      fetch(CONFIG.GAS_WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "adminLogin", password: password })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP 응답 에러: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        App.hideLoading();
-        if (data.status === "SUCCESS") {
-          state.isLoggedIn = true;
-          state.authToken = data.token;
-          sessionStorage.setItem("health_admin_token", data.token);
-          document.getElementById("modal-login").classList.add("hidden");
-          App.updateAuthUI();
-          TeacherFlow.openDashboard();
-        } else {
-          alert(`로그인 실패: ${data.message}`);
-        }
-      })
-      .catch(err => {
-        App.hideLoading();
-        console.error("로그인 연동 오류:", err);
-        alert(`관리자 로그인 통신 에러가 발생했습니다. (상세 내용: ${err.message})`);
-      });
+    try {
+      const data = await fetchApi("adminLogin", { password });
+      App.hideLoading();
+
+      state.isLoggedIn = true;
+      state.authToken = data.token;
+      sessionStorage.setItem("health_admin_token", data.token);
+
+      document.getElementById("modal-login").classList.add("hidden");
+      document.getElementById("input-admin-password").value = "";
+      App.updateAuthUI();
+      TeacherFlow.openDashboard();
+
+    } catch (err) {
+      App.hideLoading();
+      alert(`로그인 실패: ${err.message}`);
     }
   },
 
@@ -381,7 +372,52 @@ const TeacherFlow = {
     state.currentView = "teacher";
     document.getElementById("view-student").classList.add("hidden");
     document.getElementById("view-teacher").classList.remove("hidden");
-    TeacherFlow.renderDashboard();
+    
+    TeacherFlow.fetchDashboardData();
+    TeacherFlow.startPolling();
+  },
+
+  startPolling() {
+    TeacherFlow.stopPolling();
+    state.pollingTimer = setInterval(() => {
+      if (state.currentView === "teacher" && state.isLoggedIn) {
+        TeacherFlow.fetchDashboardData(true);
+      }
+    }, CONFIG.TIMERS.POLLING_INTERVAL_MS);
+  },
+
+  stopPolling() {
+    if (state.pollingTimer) {
+      clearInterval(state.pollingTimer);
+      state.pollingTimer = null;
+    }
+  },
+
+  // 4. 관리자 대시보드 → 서버 데이터 동기화 (getAdminDashboardData API)
+  async fetchDashboardData(isSilent = false) {
+    if (!isSilent) App.showLoading("최신 방문 대기 목록을 불러오는 중입니다...");
+
+    try {
+      const data = await fetchApi("getAdminDashboardData", { token: state.authToken });
+      if (!isSilent) App.hideLoading();
+
+      state.requests = data.requests || [];
+      TeacherFlow.renderDashboard();
+
+      const activeTab = document.querySelector("#view-teacher button[id^='tab-btn-'].bg-slate-900");
+      if (activeTab && activeTab.id === "tab-btn-kanban") TeacherFlow.renderKanban();
+      if (activeTab && activeTab.id === "tab-btn-stats") TeacherFlow.fetchStatsData(true);
+
+    } catch (err) {
+      if (!isSilent) App.hideLoading();
+      if (err.message.includes("유효하지 않거나 만료")) {
+        alert("관리자 세션이 만료되어 다시 로그인해야 합니다.");
+        state.isLoggedIn = false;
+        sessionStorage.removeItem("health_admin_token");
+        App.updateAuthUI();
+        App.goHome();
+      }
+    }
   },
 
   switchTab(tabName) {
@@ -399,7 +435,7 @@ const TeacherFlow = {
     });
 
     if (tabName === "kanban") TeacherFlow.renderKanban();
-    if (tabName === "stats") TeacherFlow.renderStats();
+    if (tabName === "stats") TeacherFlow.fetchStatsData();
   },
 
   renderDashboard() {
@@ -449,18 +485,23 @@ const TeacherFlow = {
     });
   },
 
-  updateStatus(reqId, newStatus) {
-    const req = state.requests.find(r => r.id === reqId);
-    if (!req) return;
+  // 5. 대기열 관리 → 접수 상태 변경 (updateStatus API)
+  async updateStatus(reqId, newStatus) {
+    App.showLoading("서버 Google Sheets에 상태 변경을 반영 중입니다...");
 
-    req.status = newStatus;
-    TeacherFlow.renderDashboard();
-
-    if (!state.isMockMode) {
-      fetch(CONFIG.GAS_WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "updateStatus", token: state.authToken, request_id: reqId, status: newStatus })
+    try {
+      await fetchApi("updateStatus", {
+        token: state.authToken,
+        request_id: reqId,
+        status: newStatus
       });
+
+      App.hideLoading();
+      TeacherFlow.fetchDashboardData(true);
+
+    } catch (err) {
+      App.hideLoading();
+      alert(`상태 변경 실패: ${err.message}`);
     }
   },
 
@@ -502,66 +543,89 @@ const TeacherFlow = {
     });
   },
 
+  // 6. 통계 화면 → GAS에서 계산한 통계 데이터 조회 (getStats API)
+  async fetchStatsData(isSilent = false) {
+    if (!isSilent) App.showLoading("서버 통계 집계 데이터를 계산 중입니다...");
+
+    try {
+      const data = await fetchApi("getStats", { token: state.authToken });
+      if (!isSilent) App.hideLoading();
+
+      state.serverStats = data.calculated_stats;
+      TeacherFlow.renderStats();
+
+    } catch (err) {
+      if (!isSilent) App.hideLoading();
+      console.error("통계 데이터 수신 실패:", err);
+    }
+  },
+
   renderStats() {
     const containerType = document.getElementById("chart-type-ratios");
     const containerHourly = document.getElementById("chart-hourly-peaks");
-    const total = state.requests.length || 1;
 
-    // 1. 방문 유형별 비율 시각화
-    containerType.innerHTML = "";
-    Object.values(CONFIG.VISIT_TYPES).forEach(type => {
-      const cnt = state.requests.filter(r => r.visit_type === type.id).length;
-      const pct = Math.round((cnt / total) * 100);
+    const stats = state.serverStats;
 
-      const row = document.createElement("div");
-      row.className = "space-y-1";
-      row.innerHTML = `
-        <div class="flex justify-between text-xs font-bold">
-          <span>${type.name}</span>
-          <span>${cnt}건 (${pct}%)</span>
-        </div>
-        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-          <div class="bg-emerald-500 h-full" style="width: ${pct}%"></div>
-        </div>
-      `;
-      containerType.appendChild(row);
-    });
+    // 1. 서버 집계 결과가 존재할 경우
+    if (stats && stats.visit_type_ratios) {
+      containerType.innerHTML = "";
+      Object.entries(stats.visit_type_ratios).forEach(([typeName, meta]) => {
+        const pctNum = parseFloat(meta.ratio) || 0;
+        const row = document.createElement("div");
+        row.className = "space-y-1";
+        row.innerHTML = `
+          <div class="flex justify-between text-xs font-bold">
+            <span>${typeName}</span>
+            <span>${meta.count}건 (${meta.ratio})</span>
+          </div>
+          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+            <div class="bg-emerald-500 h-full" style="width: ${pctNum}%"></div>
+          </div>
+        `;
+        containerType.appendChild(row);
+      });
 
-    // 2. 시간대별 접수 피크 분포 시각화
-    const hourlyCounts = {};
-    for (let h = 9; h <= 16; h++) {
-      const slot = `${String(h).padStart(2, '0')}:00`;
-      hourlyCounts[slot] = 0;
+      const hourlyCounts = stats.hourly_counts || {};
+      const maxCount = Math.max(...Object.values(hourlyCounts).map(v => Number(v) || 0), 1);
+
+      containerHourly.innerHTML = "";
+      Object.entries(hourlyCounts).forEach(([slot, cnt]) => {
+        const pct = Math.round((cnt / maxCount) * 100);
+        const row = document.createElement("div");
+        row.className = "space-y-1";
+        row.innerHTML = `
+          <div class="flex justify-between text-xs font-bold">
+            <span>${slot} 시간대</span>
+            <span>${cnt}건</span>
+          </div>
+          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+            <div class="bg-blue-500 h-full" style="width: ${pct}%"></div>
+          </div>
+        `;
+        containerHourly.appendChild(row);
+      });
+    } else {
+      // 2. 로컬 데이터 폴백 시각화
+      const total = state.requests.length || 1;
+      containerType.innerHTML = "";
+      Object.values(CONFIG.VISIT_TYPES).forEach(type => {
+        const cnt = state.requests.filter(r => r.visit_type === type.id).length;
+        const pct = Math.round((cnt / total) * 100);
+
+        const row = document.createElement("div");
+        row.className = "space-y-1";
+        row.innerHTML = `
+          <div class="flex justify-between text-xs font-bold">
+            <span>${type.name}</span>
+            <span>${cnt}건 (${pct}%)</span>
+          </div>
+          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+            <div class="bg-emerald-500 h-full" style="width: ${pct}%"></div>
+          </div>
+        `;
+        containerType.appendChild(row);
+      });
     }
-
-    state.requests.forEach(r => {
-      if (r.timestamp) {
-        const hour = new Date(r.timestamp).getHours();
-        const slot = `${String(hour).padStart(2, '0')}:00`;
-        if (hourlyCounts[slot] !== undefined) {
-          hourlyCounts[slot]++;
-        }
-      }
-    });
-
-    const maxCount = Math.max(...Object.values(hourlyCounts), 1);
-
-    containerHourly.innerHTML = "";
-    Object.entries(hourlyCounts).forEach(([slot, cnt]) => {
-      const pct = Math.round((cnt / maxCount) * 100);
-      const row = document.createElement("div");
-      row.className = "space-y-1";
-      row.innerHTML = `
-        <div class="flex justify-between text-xs font-bold">
-          <span>${slot} 시간대</span>
-          <span>${cnt}건</span>
-        </div>
-        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-          <div class="bg-blue-500 h-full" style="width: ${pct}%"></div>
-        </div>
-      `;
-      containerHourly.appendChild(row);
-    });
   },
 
   openDetailModal(reqId) {
@@ -591,7 +655,7 @@ const TeacherFlow = {
   },
 
   refreshData() {
-    TeacherFlow.renderDashboard();
+    TeacherFlow.fetchDashboardData();
   }
 };
 
