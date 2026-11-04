@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>스마트 보건실 통합 관리 시스템</title>
+  <title>스마트 보건실 통합 관리 시스템 (LABIT)</title>
 
   <!-- PWA & Favicon 아이콘 설정 -->
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
@@ -29,14 +29,14 @@
         </div>
         <div>
           <h1 class="text-lg font-bold text-slate-900 leading-tight">스마트 보건실</h1>
-          <p class="text-xs text-slate-500 font-medium">통합 대기 관리 & 방문 통계</p>
+          <p class="text-xs text-slate-500 font-medium">통합 대기 관리 & 방문 통계 (LABIT)</p>
         </div>
       </div>
 
       <div class="flex items-center space-x-2 sm:space-x-3">
         <button onclick="ManualModal.open()" class="px-3 py-2 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition flex items-center space-x-1 touch-effect">
           <span>📖</span>
-          <span>사용 방법</span>
+          <span>사용 설명서</span>
         </button>
         <button id="btn-header-auth" onclick="App.toggleAuthModal()" class="px-3 py-2 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition flex items-center space-x-1 border border-emerald-200 touch-effect">
           <span>🔑</span>
@@ -282,10 +282,8 @@
       <div id="teacher-tab-kanban" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 hidden">
       </div>
 
-      <!-- Tab 3: 방문 통계 화면 (개선된 모던 UI) -->
+      <!-- Tab 3: 방문 통계 화면 -->
       <div id="teacher-tab-stats" class="space-y-6 hidden">
-        
-        <!-- 상단 헤더 & 기간 필터 제어바 -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h3 class="text-xl font-black text-slate-900">📊 보건실 방문 통계 대시보드</h3>
@@ -303,44 +301,37 @@
           </div>
         </div>
 
-        <!-- 7가지 주요 통계 KPI 지표 카드 6종 -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <!-- 카드 1: 전체 누적 접수 -->
           <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-4 rounded-2xl text-white shadow-lg shadow-emerald-100 space-y-1">
             <span class="text-xs font-semibold text-emerald-100">전체 접수</span>
             <div id="stat-card-total" class="text-2xl font-black">0건</div>
             <p class="text-[10px] text-emerald-100 opacity-90">누적 방문 수치</p>
           </div>
 
-          <!-- 카드 2: 처치 완료 -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
             <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">처치 완료</span>
             <div id="stat-card-completed" class="text-2xl font-extrabold text-slate-900">0건</div>
             <p id="stat-card-completed-pct" class="text-[10px] text-slate-400 font-medium">전체 중 0%</p>
           </div>
 
-          <!-- 카드 3: 대기 / 처치 중 -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
             <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">대기/상담중</span>
             <div id="stat-card-active" class="text-2xl font-extrabold text-slate-900">0건</div>
             <p class="text-[10px] text-slate-400 font-medium">현재 진행 상태</p>
           </div>
 
-          <!-- 카드 4: 취소된 접수 -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
             <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">취소건</span>
             <div id="stat-card-cancelled" class="text-2xl font-extrabold text-slate-700">0건</div>
             <p class="text-[10px] text-slate-400 font-medium">실시간 유효 구분</p>
           </div>
 
-          <!-- 카드 5: 최다 방문 사유 -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 sm:col-span-1">
             <span class="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">최다 방문 목적</span>
             <div id="stat-card-top-purpose" class="text-sm font-black text-slate-900 truncate">분석 중</div>
             <p id="stat-card-top-purpose-detail" class="text-[10px] text-purple-600 font-semibold truncate">가장 빈번한 사유</p>
           </div>
 
-          <!-- 카드 6: 기간 수치 비교 -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 sm:col-span-1">
             <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">기간별 추이</span>
             <div id="stat-card-period-compare" class="text-sm font-black text-slate-900">동일 유지</div>
@@ -348,17 +339,13 @@
           </div>
         </div>
 
-        <!-- 데이터가 없을 때 표시되는 빈 상태 안내 -->
         <div id="stats-empty-alert" class="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-3 hidden">
           <div class="inline-flex p-4 rounded-full bg-slate-100 text-slate-400 text-3xl">📭</div>
           <h4 class="text-base font-bold text-slate-800">조회된 기간 내 방문 데이터가 없습니다.</h4>
           <p class="text-xs text-slate-500">학생 접수가 수집되면 실시간 그래프와 수치가 그래프로 출력됩니다.</p>
         </div>
 
-        <!-- Chart.js 시각화 차트 메인 그리드 3종 -->
         <div id="stats-charts-container" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          <!-- 차트 1: 날짜별 접수 추이 (Line Chart) -->
           <div class="lg:col-span-2 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
             <div class="flex justify-between items-center border-b pb-3">
               <h4 class="font-bold text-slate-900 text-sm flex items-center space-x-2">
@@ -372,7 +359,6 @@
             </div>
           </div>
 
-          <!-- 차트 2: 방문 목적별 비율 (Doughnut Chart) -->
           <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
             <div class="flex justify-between items-center border-b pb-3">
               <h4 class="font-bold text-slate-900 text-sm flex items-center space-x-2">
@@ -386,7 +372,6 @@
             </div>
           </div>
 
-          <!-- 차트 3: 시간대별 접수 현황 피크 (Bar Chart) -->
           <div class="lg:col-span-3 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
             <div class="flex justify-between items-center border-b pb-3">
               <h4 class="font-bold text-slate-900 text-sm flex items-center space-x-2">
@@ -399,9 +384,7 @@
               <canvas id="chart-hourly-bar"></canvas>
             </div>
           </div>
-
         </div>
-
       </div>
 
     </section>
@@ -410,58 +393,456 @@
 
   <!-- 3. 모달 레이어 모음 -->
 
-  <!-- Modal A: 사용자 매뉴얼 모달 -->
-  <div id="modal-manual" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-      <div class="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-        <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
-          <span>📖 앱 사용자 매뉴얼</span>
-        </h3>
-        <button onclick="ManualModal.close()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold flex items-center justify-center transition">✕</button>
+  <!-- Modal A: 사용 설명서 모달 (원고 100% 매핑 및 Markdown 가독성 UI) -->
+  <div id="modal-manual" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+    <div class="bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100">
+      
+      <!-- 모달 상단 헤더 -->
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+        <div class="flex items-center space-x-2.5">
+          <span class="p-2 rounded-xl bg-emerald-100 text-emerald-700 text-lg">📖</span>
+          <div>
+            <h3 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">스마트 보건실 (LABIT) 사용 설명서</h3>
+            <p class="text-xs text-slate-500 font-medium">보건실 방문 접수 및 대기열 관리 시스템 매뉴얼</p>
+          </div>
+        </div>
+        <button onclick="ManualModal.close()" class="w-9 h-9 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold flex items-center justify-center transition touch-effect">✕</button>
       </div>
 
-      <div class="flex overflow-x-auto bg-slate-100 border-b border-slate-200 px-4 text-xs font-bold text-slate-600">
-        <button id="manual-tab-1" onclick="ManualModal.switchTab(1)" class="py-3 px-4 border-b-2 border-emerald-500 text-emerald-600 whitespace-nowrap">1. 시스템 소개</button>
-        <button id="manual-tab-2" onclick="ManualModal.switchTab(2)" class="py-3 px-4 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">2. 접속 및 PWA 설치</button>
-        <button id="manual-tab-3" onclick="ManualModal.switchTab(3)" class="py-3 px-4 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">3. 화면 설명</button>
-        <button id="manual-tab-4" onclick="ManualModal.switchTab(4)" class="py-3 px-4 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">4. 핵심 기능 사용법</button>
-        <button id="manual-tab-5" onclick="ManualModal.switchTab(5)" class="py-3 px-4 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">5. 주의사항 & FAQ</button>
+      <!-- 상단 5단계 목차 탭 메뉴 -->
+      <div class="flex overflow-x-auto bg-slate-100 border-b border-slate-200 px-3 sm:px-4 text-xs font-bold text-slate-600 no-scrollbar">
+        <button id="manual-tab-1" onclick="ManualModal.switchTab(1)" class="py-3 px-3.5 border-b-2 border-emerald-500 text-emerald-600 whitespace-nowrap transition">1. 프로그램 소개</button>
+        <button id="manual-tab-2" onclick="ManualModal.switchTab(2)" class="py-3 px-3.5 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap transition">2. 접속 및 PWA 설치</button>
+        <button id="manual-tab-3" onclick="ManualModal.switchTab(3)" class="py-3 px-3.5 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap transition">3. 화면 구성 설명</button>
+        <button id="manual-tab-4" onclick="ManualModal.switchTab(4)" class="py-3 px-3.5 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap transition">4. 핵심 기능 사용법</button>
+        <button id="manual-tab-5" onclick="ManualModal.switchTab(5)" class="py-3 px-3.5 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap transition">5. 주의사항 & FAQ</button>
       </div>
 
-      <div class="p-6 overflow-y-auto space-y-4 text-sm text-slate-700 flex-1">
-        <div id="manual-content-1" class="space-y-3">
-          <h4 class="font-bold text-slate-900 text-base">① 프로그램 소개</h4>
-          <p>학교 보건실 대기시간 단축 및 방문 유형별 대기열 분리를 목적으로 개발된 스마트 보건실 관리 시스템입니다.</p>
+      <!-- 매뉴얼 본문 영역 (가독성 스타일링) -->
+      <div class="p-5 sm:p-7 overflow-y-auto space-y-6 text-sm text-slate-700 leading-relaxed flex-1">
+        
+        <!-- ==================== Section 1. 프로그램 소개 ==================== -->
+        <div id="manual-content-1" class="space-y-6">
+          <div class="border-b border-slate-200 pb-3">
+            <h2 class="text-xl font-black text-slate-900 flex items-center space-x-2">
+              <span class="text-emerald-500">#</span>
+              <span>1. 프로그램 소개</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">스마트 보건실 통합 관리 시스템 (LABIT)의 개요 및 제작 목적</p>
+          </div>
+
+          <p class="text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            학교 보건실의 접수 및 대기 과정을 효율적으로 관리하기 위해 제작된 <strong>보건실 방문 접수 및 대기열 관리 프로그램</strong>이다.
+          </p>
+
+          <p>
+            <strong>학생</strong>은 보건실에 방문하기 전 프로그램을 통해 방문 목적과 현재 상태를 선택하여 접수할 수 있으며, 접수 후 발급되는 <strong>대기번호</strong>를 통해 자신의 대기 순서를 확인할 수 있다.
+          </p>
+
+          <p>
+            <strong>관리자</strong>는 별도의 관리자 화면에서 학생들의 접수 현황을 확인하고, 방문 목적별 대기열을 관리할 수 있다. 또한 누적된 접수 데이터를 바탕으로 방문 유형과 시간대별 통계를 확인할 수 있다.
+          </p>
+
+          <!-- 이용 대상 -->
+          <div class="space-y-3 pt-2">
+            <h3 class="text-base font-bold text-slate-900 border-l-4 border-emerald-500 pl-3">## 이용 대상</h3>
+            <ul class="space-y-2 text-xs font-medium pl-1">
+              <li class="p-3 bg-white border border-slate-200 rounded-xl flex items-start space-x-2">
+                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">학생</span>
+                <span>보건실 방문 전 접수를 진행하고 대기번호를 발급받는 사용자</span>
+              </li>
+              <li class="p-3 bg-white border border-slate-200 rounded-xl flex items-start space-x-2">
+                <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold">보건실 담당 교사</span>
+                <span>학생들의 접수 현황과 대기열을 확인하고 접수 상태를 관리하는 사용자</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 제작 목적 -->
+          <div class="space-y-3 pt-2">
+            <h3 class="text-base font-bold text-slate-900 border-l-4 border-emerald-500 pl-3">## 제작 목적</h3>
+            <div class="p-4 bg-emerald-50/60 border border-emerald-200 rounded-2xl text-xs text-slate-700 space-y-2">
+              <p>
+                쉬는 시간이나 점심시간처럼 보건실 방문이 집중되는 시간에는 접수와 대기가 혼잡해질 수 있다.
+              </p>
+              <p>
+                <strong>LABIT</strong>은 <strong>방문 목적별 접수와 대기열 분리</strong>를 통해 이러한 혼잡을 줄이고, 보건실 담당 교사가 학생들의 방문 현황을 보다 효율적으로 파악할 수 있도록 돕는 것을 목적으로 한다.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div id="manual-content-2" class="space-y-3 hidden">
-          <h4 class="font-bold text-slate-900 text-base">② 접속 및 PWA 설치 방법</h4>
-          <p>GitHub Pages 웹 접속 후 태블릿 브라우저 메뉴에서 [홈 화면에 추가]를 클릭하여 설치합니다.</p>
+        <!-- ==================== Section 2. 접속 및 설치 방법 ==================== -->
+        <div id="manual-content-2" class="space-y-6 hidden">
+          <div class="border-b border-slate-200 pb-3">
+            <h2 class="text-xl font-black text-slate-900 flex items-center space-x-2">
+              <span class="text-emerald-500">#</span>
+              <span>2. 접속 및 설치 방법</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">웹 브라우저 접속 및 PWA(Progressive Web App) 앱 설치 가이드</p>
+          </div>
+
+          <!-- 프로그램 접속 -->
+          <div class="space-y-3">
+            <h3 class="text-base font-bold text-slate-900 border-l-4 border-emerald-500 pl-3">## 프로그램 접속</h3>
+            <ol class="list-decimal pl-5 space-y-2 text-xs font-semibold text-slate-800">
+              <li>제공된 프로그램 접속 주소에 접속한다.</li>
+              <li>프로그램의 메인 화면이 정상적으로 표시되는지 확인한다.</li>
+              <li><strong>학생</strong>은 학생용 접수 기능을 이용하고, <strong>보건실 담당 교사</strong>는 <strong>[🔑 교사 로그인]</strong> 기능을 이용한다.</li>
+            </ol>
+          </div>
+
+          <!-- PWA 설치 방법 -->
+          <div class="space-y-4 pt-2">
+            <h3 class="text-base font-bold text-slate-900 border-l-4 border-emerald-500 pl-3">## PWA 설치 방법</h3>
+            <p class="text-xs text-slate-600">
+              이 프로그램은 <strong>PWA(Progressive Web App)</strong> 방식으로 제작되어 지원되는 브라우저와 기기에서 앱처럼 설치하여 사용할 수 있다.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              <!-- PC 설치 -->
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+                <h4 class="font-bold text-slate-900 text-xs flex items-center space-x-1.5">
+                  <span class="p-1 bg-slate-100 rounded">💻</span>
+                  <span>PC에서 설치하기</span>
+                </h4>
+                <ol class="list-decimal pl-4 space-y-1.5 text-xs text-slate-700">
+                  <li><strong>Chrome</strong> 또는 지원되는 브라우저에서 프로그램에 접속한다.</li>
+                  <li>주소창 주변에 표시되는 <strong>설치 아이콘</strong> 또는 브라우저 메뉴의 <strong>설치 항목</strong>을 선택한다.</li>
+                  <li>설치 안내가 나타나면 설치를 진행한다.</li>
+                  <li>설치가 완료되면 바탕화면이나 앱 목록에서 프로그램을 실행할 수 있다.</li>
+                </ol>
+              </div>
+
+              <!-- 모바일/태블릿 설치 -->
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+                <h4 class="font-bold text-slate-900 text-xs flex items-center space-x-1.5">
+                  <span class="p-1 bg-slate-100 rounded">📱</span>
+                  <span>모바일 및 태블릿에서 설치하기</span>
+                </h4>
+                <ol class="list-decimal pl-4 space-y-1.5 text-xs text-slate-700">
+                  <li>브라우저에서 프로그램에 접속한다.</li>
+                  <li>브라우저 메뉴에서 <strong>'홈 화면에 추가'</strong> 또는 <strong>'앱 설치'</strong> 항목을 선택한다.</li>
+                  <li>설치를 진행한다.</li>
+                  <li>홈 화면에 생성된 프로그램 아이콘을 눌러 실행한다.</li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
+              ※ 브라우저와 운영체제에 따라 설치 메뉴의 명칭과 제공 여부가 다를 수 있다.
+            </div>
+          </div>
         </div>
 
-        <div id="manual-content-3" class="space-y-3 hidden">
-          <h4 class="font-bold text-slate-900 text-base">③ 화면 구성 설명</h4>
-          <p>학생용 접수 터치 화면과 교사 전용 실시간 현황 대시보드로 나뉩니다.</p>
+        <!-- ==================== Section 3. 화면 설명 ==================== -->
+        <div id="manual-content-3" class="space-y-6 hidden">
+          <div class="border-b border-slate-200 pb-3">
+            <h2 class="text-xl font-black text-slate-900 flex items-center space-x-2">
+              <span class="text-emerald-500">#</span>
+              <span>3. 화면 구성 설명</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">학생용 접수 화면, 교사 관리자 화면, 방문 통계 화면 UI 안내</p>
+          </div>
+
+          <!-- 3-1. 학생용 화면 -->
+          <div class="space-y-3">
+            <h3 class="text-base font-bold text-slate-900 border-l-4 border-emerald-500 pl-3">### 3-1. 학생용 화면</h3>
+            <ul class="space-y-2 text-xs font-semibold text-slate-800">
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-emerald-600 font-bold">[Touch ! 접수 시작하기] 버튼:</span> 보건실 방문 접수를 시작한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-emerald-600 font-bold">방문 목적 선택 버튼:</span> 보건실을 방문하는 목적(5가지 카테고리)을 선택한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-emerald-600 font-bold">상태 및 증상 선택 버튼:</span> 현재 상태나 증상에 해당하는 세부 항목을 선택한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-emerald-600 font-bold">[✅ 최종 접수 확정] 버튼:</span> 선택한 정보를 바탕으로 접수를 요청한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-emerald-600 font-bold">대기번호 표시 영역:</span> 접수가 정상적으로 완료되면 발급된 대기번호(예: <code class="px-1.5 py-0.5 bg-slate-100 text-slate-800 rounded font-mono">A-01</code>)를 표시한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-emerald-600 font-bold">[❌ 접수 취소하기] 버튼:</span> 진행 중인 접수를 취소하거나 이전 화면으로 돌아간다.</li>
+            </ul>
+          </div>
+
+          <!-- 3-2. 관리자 화면 -->
+          <div class="space-y-3 pt-2">
+            <h3 class="text-base font-bold text-slate-900 border-l-4 border-emerald-500 pl-3">### 3-2. 관리자 화면</h3>
+            <ul class="space-y-2 text-xs font-semibold text-slate-800">
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-blue-600 font-bold">로그인 입력란:</span> 관리자 인증에 필요한 비밀번호(<code class="px-1.5 py-0.5 bg-slate-100 text-slate-800 rounded font-mono">admin1234</code>)를 입력한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-blue-600 font-bold">[로그인] 버튼:</span> 입력한 정보로 관리자 인증을 진행한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-blue-600 font-bold">대기열 목록 & 칸반 보드:</span> 방문 목적별로 접수된 학생들의 대기 현황을 보여준다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-blue-600 font-bold">접수 상세 정보:</span> 선택한 접수의 방문 목적과 입력 정보를 확인한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-blue-600 font-bold">상태 변경 버튼:</span> 접수 상태를 <strong>대기 중</strong>, <strong>상담 중</strong>, <strong>완료</strong> 등으로 변경한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-blue-600 font-bold">취소 기능:</span> 해당 접수를 취소 처리한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-blue-600 font-bold">[🔄 새로고침] 버튼:</span> 최신 접수 현황을 다시 불러온다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-blue-600 font-bold">[방문 통계] 메뉴:</span> 접수 데이터를 바탕으로 계산된 통계 정보를 확인한다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-blue-600 font-bold">[관리자 로그아웃] 버튼:</span> 관리자 화면에서 안전하게 로그아웃한다.</li>
+            </ul>
+          </div>
+
+          <!-- 3-3. 통계 화면 -->
+          <div class="space-y-3 pt-2">
+            <h3 class="text-base font-bold text-slate-900 border-l-4 border-emerald-500 pl-3">### 3-3. 통계 화면</h3>
+            <ul class="space-y-2 text-xs font-semibold text-slate-800">
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-purple-600 font-bold">전체 접수 건수:</span> 조회 기간에 해당하는 전체 접수 현황을 보여준다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-purple-600 font-bold">방문 목적별 통계:</span> 방문 목적에 따른 접수 건수와 비율(도넛 그래프)을 보여준다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-purple-600 font-bold">날짜별 통계:</span> 날짜에 따른 접수량의 변화(선 그래프)를 보여준다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-purple-600 font-bold">시간대별 통계:</span> 특정 시간대에 접수가 얼마나 발생했는지(막대 그래프) 보여준다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-purple-600 font-bold">상태별 통계:</span> 대기, 상담, 완료, 취소 상태에 따른 접수 현황을 보여준다.</li>
+              <li class="p-2.5 bg-white border border-slate-200 rounded-xl"><span class="text-purple-600 font-bold">기간 선택 기능:</span> 원하는 기간(전체, 오늘, 7일, 30일)을 지정하여 통계 데이터를 조회한다.</li>
+            </ul>
+          </div>
         </div>
 
-        <div id="manual-content-4" class="space-y-4 hidden">
-          <h4 class="font-bold text-slate-900 text-base">④ 핵심 기능 3가지 사용법</h4>
-          <ol class="list-decimal pl-5 space-y-2 text-xs font-semibold text-slate-800">
-            <li><strong>학생 접수 및 유형별 대기열 이용:</strong> 태블릿 화면에서 학년/반/이름을 입력하고 방문 목적(물품, 휴식, 외상 등)을 선택하여 번호표를 발급받습니다.</li>
-            <li><strong>교사용 접수 확인 및 대기열 관리:</strong> 관리자 로그인 후 실시간 대시보드에서 대기 상태 변경(상담 시작, 처치 완료)을 처리합니다.</li>
-            <li><strong>방문 통계 확인 및 조회:</strong> 방문 통계 탭에서 유형별 비율, 날짜별 추이, 시간대별 접수 피크 데이터를 Chart.js 그래프 형태로 확인합니다.</li>
-          </ol>
+        <!-- ==================== Section 4. 핵심 기능 사용법 ==================== -->
+        <div id="manual-content-4" class="space-y-6 hidden">
+          <div class="border-b border-slate-200 pb-3">
+            <h2 class="text-xl font-black text-slate-900 flex items-center space-x-2">
+              <span class="text-emerald-500">#</span>
+              <span>4. 기능별 사용 방법</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">학생 접수, 관리자 대기열 제어, 통계 조회 3가지 주요 순서 가이드</p>
+          </div>
+
+          <!-- 기능 ① 학생용 보건실 방문 접수 -->
+          <div class="p-5 bg-white border border-slate-200 rounded-2xl space-y-3">
+            <h3 class="text-base font-black text-slate-900 flex items-center space-x-2">
+              <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-xs font-bold">기능 ①</span>
+              <span>학생용 보건실 방문 접수</span>
+            </h3>
+            <p class="text-xs text-slate-600">
+              학생이 보건실을 방문하기 전에 자신의 방문 목적과 상태를 선택하고 대기번호를 발급받는 기능이다.
+            </p>
+
+            <div class="space-y-2 pt-1">
+              <h4 class="font-bold text-slate-800 text-xs">【 사용 순서 】</h4>
+              <ol class="list-decimal pl-5 space-y-1.5 text-xs text-slate-700 font-medium">
+                <li>메인 화면에 접속한다.</li>
+                <li><strong>[Touch ! 접수 시작하기]</strong> 버튼을 눌러 학생용 접수 화면으로 이동한다.</li>
+                <li>학년/반/번호/이름 정보를 입력 후 화면에 표시된 방문 목적(5가지) 중 자신의 방문 목적에 해당하는 항목을 선택한다.</li>
+                <li>현재 상태나 증상에 해당하는 세부 항목을 선택한다.</li>
+                <li>선택한 내용이 맞는지 접수 내역을 확인한다.</li>
+                <li><strong>[✅ 최종 접수 확정]</strong> 버튼을 눌러 접수를 요청한다.</li>
+                <li>접수가 정상적으로 처리되면 화면에 표시되는 <strong>대기번호</strong>(예: <code class="px-1 py-0.5 bg-slate-100 rounded">A-01</code>)를 확인한다.</li>
+                <li>발급된 대기번호를 확인하고 보건실 담당 교사의 안내에 따라 대기한다.</li>
+              </ol>
+            </div>
+
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs text-slate-600">
+              <h5 class="font-bold text-slate-800">📌 이용 시 참고사항</h5>
+              <ul class="list-disc pl-4 space-y-1 text-[11px]">
+                <li>방문 목적은 실제 방문 이유와 가장 가까운 항목을 선택한다.</li>
+                <li>증상이나 상태를 선택하는 과정은 접수 정보를 전달하기 위한 것이며 <strong>의료적 진단을 의미하지 않는다.</strong></li>
+                <li>접수가 완료되었다는 표시가 나타나지 않았다면 접수 여부를 다시 확인한다.</li>
+                <li><strong>긴급하거나 즉각적인 도움이 필요한 경우</strong> 프로그램 접수만 기다리지 말고 보건실 담당 교사에게 직접 알린다.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 기능 ② 관리자 대기열 관리 -->
+          <div class="p-5 bg-white border border-slate-200 rounded-2xl space-y-3">
+            <h3 class="text-base font-black text-slate-900 flex items-center space-x-2">
+              <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-md text-xs font-bold">기능 ②</span>
+              <span>관리자 대기열 관리</span>
+            </h3>
+            <p class="text-xs text-slate-600">
+              보건실 담당 교사가 학생들의 접수 현황을 확인하고 방문 목적별 대기열을 관리하는 기능이다.
+            </p>
+
+            <div class="space-y-2 pt-1">
+              <h4 class="font-bold text-slate-800 text-xs">【 사용 순서 】</h4>
+              <ol class="list-decimal pl-5 space-y-1.5 text-xs text-slate-700 font-medium">
+                <li>프로그램에 접속한다.</li>
+                <li>우측 상단 <strong>[🔑 교사 로그인]</strong> 버튼을 눌러 관리자 로그인 화면으로 이동한다.</li>
+                <li>관리자 인증 정보(비밀번호: <code class="px-1 py-0.5 bg-slate-100 rounded">admin1234</code>)를 입력하고 로그인한다.</li>
+                <li>관리자 대시보드에서 현재 접수 현황을 확인한다.</li>
+                <li>방문 목적별로 구분된 대기열(칸반 보드)을 확인한다.</li>
+                <li>관리할 접수 항목을 선택하여 상세 정보를 확인한다.</li>
+                <li>학생의 상담 진행 상황에 따라 접수 상태를 변경한다.</li>
+              </ol>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+              <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+                <span class="font-bold text-amber-800">대기 중:</span> 접수가 완료되었으며 아직 상담이 시작되지 않은 상태
+              </div>
+              <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-xl">
+                <span class="font-bold text-blue-800">상담 중:</span> 담당 교사가 해당 학생을 확인하거나 상담하고 있는 상태
+              </div>
+              <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <span class="font-bold text-emerald-800">완료:</span> 해당 접수에 대한 처리가 끝난 상태
+              </div>
+              <div class="p-2.5 bg-slate-100 border border-slate-200 rounded-xl">
+                <span class="font-bold text-slate-700">취소:</span> 접수가 취소된 상태
+              </div>
+            </div>
+
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs text-slate-600">
+              <h5 class="font-bold text-slate-800">📌 이용 시 참고사항</h5>
+              <ul class="list-disc pl-4 space-y-1 text-[11px]">
+                <li>학생의 실제 방문 목적과 접수 정보가 일치하는지 확인한다.</li>
+                <li>방문 목적별 대기열을 구분하여 확인한다.</li>
+                <li>상담이 시작되면 해당 접수를 <strong>[상담 시작]</strong>으로 변경한다.</li>
+                <li>처리가 끝나면 <strong>[완료 처리]</strong> 상태로 변경한다.</li>
+                <li>취소된 접수는 정상적인 완료 건수와 구분하여 관리한다.</li>
+                <li>관리자 화면을 사용한 뒤에는 반드시 <strong>[관리자 로그아웃]</strong>을 진행한다.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 기능 ③ 접수 통계 확인 -->
+          <div class="p-5 bg-white border border-slate-200 rounded-2xl space-y-3">
+            <h3 class="text-base font-black text-slate-900 flex items-center space-x-2">
+              <span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-md text-xs font-bold">기능 ③</span>
+              <span>접수 통계 확인</span>
+            </h3>
+            <p class="text-xs text-slate-600">
+              누적된 접수 데이터를 바탕으로 보건실 방문 현황을 수치와 그래프로 확인하는 기능이다.
+            </p>
+
+            <div class="space-y-2 pt-1">
+              <h4 class="font-bold text-slate-800 text-xs">【 사용 순서 】</h4>
+              <ol class="list-decimal pl-5 space-y-1.5 text-xs text-slate-700 font-medium">
+                <li>관리자 계정으로 로그인한다.</li>
+                <li>관리자 대시보드 상단 탭에서 <strong>[방문 통계]</strong> 메뉴로 이동한다.</li>
+                <li>전체 접수 건수와 주요 통계 수치(KPI 카드)를 확인한다.</li>
+                <li>방문 목적별 접수 건수와 비율(도넛 그래프)을 확인한다.</li>
+                <li>날짜별 접수 추이(선 그래프)를 확인한다.</li>
+                <li>시간대별 접수 현황(막대 그래프)을 확인한다.</li>
+                <li>상태별(완료/대기/취소) 접수 건수를 확인한다.</li>
+                <li>필요한 경우 <strong>조회 기간(전체/오늘/7일/30일)</strong>을 변경하여 원하는 기간의 통계를 확인한다.</li>
+              </ol>
+            </div>
+
+            <div class="p-3 bg-purple-50/60 border border-purple-200 rounded-xl space-y-1 text-xs text-purple-900">
+              <h5 class="font-bold">📊 통계 활용 방법 및 원칙</h5>
+              <p class="text-[11px] leading-relaxed">
+                통계는 Google Sheets에 저장된 접수 데이터를 일반적인 데이터 집계 방식으로 계산한 결과이며, <strong>AI 분석이나 의료적 판단을 제공하지 않는다.</strong>
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div id="manual-content-5" class="space-y-3 hidden">
-          <h4 class="font-bold text-slate-900 text-base">⑤ 주의사항 및 FAQ</h4>
-          <p>※ 실제 보건 처치 및 의료적 판단은 보건교사가 담당합니다.</p>
+        <!-- ==================== Section 5. 주의사항 및 FAQ ==================== -->
+        <div id="manual-content-5" class="space-y-6 hidden">
+          <div class="border-b border-slate-200 pb-3">
+            <h2 class="text-xl font-black text-slate-900 flex items-center space-x-2">
+              <span class="text-emerald-500">#</span>
+              <span>5. 주의사항 및 자주 묻는 질문</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">안전한 시스템 이용을 위한 수칙 및 FAQ 답변 모음</p>
+          </div>
+
+          <!-- 주의사항 (강조 박스) -->
+          <div class="p-5 bg-red-50/80 border border-red-200 rounded-2xl space-y-3">
+            <h3 class="text-base font-bold text-red-900 flex items-center space-x-2">
+              <span>⚠️</span>
+              <span>반드시 알아야 할 핵심 주의사항</span>
+            </h3>
+            <ol class="list-decimal pl-5 space-y-1.5 text-xs text-red-900 font-medium leading-relaxed">
+              <li>학생은 실제 방문 목적과 가장 가까운 항목을 선택해야 한다.</li>
+              <li>접수 완료 여부와 발급된 <strong>대기번호</strong>를 반드시 확인해야 한다.</li>
+              <li>접수 도중 인터넷 연결이 끊기면 서버에 데이터가 정상적으로 저장되지 않았을 수 있으므로 접수 상태를 확인해야 한다.</li>
+              <li>인터넷 연결이 필요한 접수 및 관리자 기능은 <strong>오프라인 상태에서 정상적으로 작동하지 않을 수 있다.</strong></li>
+              <li>관리자 계정 정보는 다른 학생이나 외부인에게 공유하지 않는다.</li>
+              <li>관리자 작업이 끝나면 반드시 <strong>로그아웃</strong>한다.</li>
+              <li>본 프로그램은 접수 및 대기열 관리를 위한 프로그램이며 <strong>의료적 진단이나 응급상황 판단을 대신하지 않는다.</strong></li>
+              <li><strong>긴급한 상황에서는 프로그램 사용보다 보건실 담당 교사에게 직접 도움을 요청하는 것이 우선이다.</strong></li>
+            </ol>
+          </div>
+
+          <!-- 자주 묻는 질문 (FAQ) -->
+          <div class="space-y-4 pt-2">
+            <h3 class="text-base font-bold text-slate-900 border-l-4 border-emerald-500 pl-3">## 자주 묻는 질문 (FAQ)</h3>
+
+            <div class="space-y-3 text-xs">
+              
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+                <div class="font-bold text-emerald-700 flex items-start space-x-2">
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-xs">Q1</span>
+                  <span>접수했는데 대기번호가 표시되지 않아요.</span>
+                </div>
+                <div class="text-slate-700 pl-9 leading-relaxed">
+                  인터넷 연결 상태를 확인하고 접수가 정상적으로 완료되었는지 확인한다. 서버 오류가 발생했을 가능성이 있으므로 중복 접수하기 전에 보건실 담당 교사에게 문의한다.
+                </div>
+              </div>
+
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+                <div class="font-bold text-emerald-700 flex items-start space-x-2">
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-xs">Q2</span>
+                  <span>잘못된 방문 목적을 선택했어요.</span>
+                </div>
+                <div class="text-slate-700 pl-9 leading-relaxed">
+                  접수가 완료되기 전이라면 <strong>[수정하기]</strong> 또는 <strong>[이전]</strong> 버튼을 눌러 다시 선택한다. 이미 접수가 완료되었다면 보건실 담당 교사에게 수정이 필요한 부분을 알린다.
+                </div>
+              </div>
+
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+                <div class="font-bold text-emerald-700 flex items-start space-x-2">
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-xs">Q3</span>
+                  <span>대기번호는 어떻게 확인하나요?</span>
+                </div>
+                <div class="text-slate-700 pl-9 leading-relaxed">
+                  접수가 정상적으로 완료된 직후 표시되는 <strong>접수 완료 화면</strong>에서 확인할 수 있다.
+                </div>
+              </div>
+
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+                <div class="font-bold text-emerald-700 flex items-start space-x-2">
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-xs">Q4</span>
+                  <span>인터넷이 연결되지 않아도 사용할 수 있나요?</span>
+                </div>
+                <div class="text-slate-700 pl-9 leading-relaxed">
+                  앱의 일부 화면은 표시될 수 있지만 접수 저장이나 관리자 데이터 조회 등 서버 통신이 필요한 기능은 인터넷 연결이 필요하다.
+                </div>
+              </div>
+
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+                <div class="font-bold text-emerald-700 flex items-start space-x-2">
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-xs">Q5</span>
+                  <span>관리자는 어떤 정보를 확인할 수 있나요?</span>
+                </div>
+                <div class="text-slate-700 pl-9 leading-relaxed">
+                  접수된 학생의 학년/반/번호/이름, 방문 목적과 선택한 상태 정보, 대기 현황 및 접수 처리 상태를 확인할 수 있다.
+                </div>
+              </div>
+
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+                <div class="font-bold text-emerald-700 flex items-start space-x-2">
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-xs">Q6</span>
+                  <span>통계 데이터는 어떻게 만들어지나요?</span>
+                </div>
+                <div class="text-slate-700 pl-9 leading-relaxed">
+                  Google Sheets에 저장된 접수 데이터를 바탕으로 프로그램이 직접 일반 수치 집계 방식으로 계산한다.
+                </div>
+              </div>
+
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+                <div class="font-bold text-emerald-700 flex items-start space-x-2">
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-xs">Q7</span>
+                  <span>접수가 취소되면 어떻게 되나요?</span>
+                </div>
+                <div class="text-slate-700 pl-9 leading-relaxed">
+                  관리자 화면에서 해당 접수를 취소 상태로 변경할 수 있다. 취소된 접수는 완료된 접수와 구분하여 관리한다.
+                </div>
+              </div>
+
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+                <div class="font-bold text-emerald-700 flex items-start space-x-2">
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-xs">Q8</span>
+                  <span>앱 설치 없이도 사용할 수 있나요?</span>
+                </div>
+                <div class="text-slate-700 pl-9 leading-relaxed">
+                  가능하다. 웹 브라우저에서 프로그램 접속 주소를 열어 바로 사용할 수 있다.
+                </div>
+              </div>
+
+            </div>
+          </div>
         </div>
+
       </div>
 
-      <div class="p-4 bg-slate-50 border-t border-slate-200 text-right">
-        <button onclick="ManualModal.close()" class="px-5 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition">닫기</button>
+      <!-- 모달 하단 닫기 푸터 -->
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center text-xs">
+        <span class="text-slate-400 font-medium">스마트 보건실 통합 관리 시스템 v2.0</span>
+        <button onclick="ManualModal.close()" class="px-6 py-2.5 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition touch-effect">닫기</button>
       </div>
+
     </div>
   </div>
 
