@@ -2,28 +2,23 @@
  * 스마트 보건실 통합 관리 시스템 - 메인 스크립트 (script.js)
  */
 
-// 애플리케이션 상태 (State) Management
 const state = {
-  currentView: "student", // "student" | "teacher"
+  currentView: "student",
   studentStep: 1,
   studentInfo: { grade: "2", class: "3", number: "15", name: "홍길동" },
   selectedType: null,
   selectedDetail: null,
   currentTicket: null,
   
-  // 관리자 인증 세션
   isLoggedIn: false,
   authToken: null,
 
-  // 접수 목록 및 통계 데이터
   requests: [],
   
-  // 자동 초기화 타이머 객체
   idleTimer: null,
   completionTimer: null,
   resetCountdownInterval: null,
   
-  // 서버 미연동 또는 네트워크 단락 시 mock 모드 동작 여부
   isMockMode: false
 };
 
@@ -34,22 +29,18 @@ const App = {
   init() {
     console.log("스마트 보건실 프론트엔드 시스템 초기화");
     
-    // 네트워크 온/오프라인 이벤트 바인딩
     window.addEventListener("online", App.updateNetworkStatus);
     window.addEventListener("offline", App.updateNetworkStatus);
     App.updateNetworkStatus();
 
-    // 초기 데이터 로드 (GAS URL 설정 확인)
     if (!CONFIG.GAS_WEB_APP_URL || CONFIG.GAS_WEB_APP_URL.trim() === "") {
       state.isMockMode = true;
       document.getElementById("mock-banner").classList.remove("hidden");
       state.requests = [...CONFIG.MOCK_DATA.requests];
     }
 
-    // 학생용 방문 유형 1차 버튼 동적 생성
     StudentFlow.renderVisitTypes();
     
-    // 세션 정보 확인
     const savedToken = sessionStorage.getItem("health_admin_token");
     if (savedToken) {
       state.isLoggedIn = true;
@@ -57,7 +48,6 @@ const App = {
       App.updateAuthUI();
     }
 
-    // 사용자 부재 감지 이벤트 listener 바인딩
     ["click", "touchstart", "mousemove", "keydown"].forEach(evt => {
       document.addEventListener(evt, StudentFlow.resetIdleTimer);
     });
@@ -84,7 +74,6 @@ const App = {
 
   toggleAuthModal() {
     if (state.isLoggedIn) {
-      // 로그아웃 수행
       if (confirm("로그아웃 하시겠습니까?")) {
         state.isLoggedIn = false;
         state.authToken = null;
@@ -144,7 +133,6 @@ const StudentFlow = {
   },
 
   nextStep(stepNumber) {
-    // 이전 step hide 및 target step show
     for (let i = 1; i <= 6; i++) {
       const el = document.getElementById(`student-step-${i}`);
       if (el) el.classList.add("hidden");
@@ -173,7 +161,6 @@ const StudentFlow = {
     
     document.getElementById("txt-selected-type-name").textContent = `선택: ${state.selectedType.name}`;
 
-    // 2차 세부옵션 버튼 생성
     const container = document.getElementById("container-detail-options");
     container.innerHTML = "";
 
@@ -182,7 +169,6 @@ const StudentFlow = {
       btn.className = "p-4 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 hover:border-emerald-500 hover:bg-emerald-50 transition touch-effect text-center text-sm";
       btn.textContent = opt;
       btn.onclick = () => {
-        // 기존 선택 해제 및 신규 강조
         Array.from(container.children).forEach(c => c.classList.remove("border-emerald-500", "bg-emerald-100", "text-emerald-900"));
         btn.classList.add("border-emerald-500", "bg-emerald-100", "text-emerald-900");
         state.selectedDetail = opt;
@@ -220,7 +206,6 @@ const StudentFlow = {
     };
 
     if (state.isMockMode) {
-      // 가상 응답 처리
       setTimeout(() => {
         App.hideLoading();
         const prefix = state.selectedType.prefix;
@@ -242,7 +227,6 @@ const StudentFlow = {
         StudentFlow.showCompletionScreen(mockTicket);
       }, 700);
     } else {
-      // 실제 GAS 서버 통신
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
         mode: "cors",
@@ -262,15 +246,12 @@ const StudentFlow = {
       .catch(err => {
         App.hideLoading();
         alert("서버 통신 중 오류가 발생했습니다.");
-        console.error(err);
       });
     }
   },
 
   showCompletionScreen(ticket) {
     document.getElementById("txt-issued-ticket-no").textContent = ticket.queue_no;
-    
-    // 앞 대기 인원 계산
     const waitingAhead = state.requests.filter(r => r.visit_type === ticket.visit_type && r.status === "WAITING" && r.id !== ticket.id).length;
     document.getElementById("txt-waiting-ahead-count").textContent = `${waitingAhead}명`;
 
@@ -291,7 +272,6 @@ const StudentFlow = {
   resetIdleTimer() {
     if (state.idleTimer) clearTimeout(state.idleTimer);
 
-    // 접수 진행 중(Step 2~5)일 때만 부재 초기화 적용
     if (state.studentStep >= 2 && state.studentStep <= 5) {
       state.idleTimer = setTimeout(() => {
         alert("30초간 입력이 없어 첫 화면으로 초기화되었습니다.");
@@ -334,7 +314,6 @@ const StudentFlow = {
   }
 };
 
-// 화면 5 진입 전 요약 데이터 바인딩
 const origNextStep = StudentFlow.nextStep;
 StudentFlow.nextStep = function(stepNumber) {
   if (stepNumber === 5) {
@@ -347,7 +326,7 @@ StudentFlow.nextStep = function(stepNumber) {
 };
 
 // ==========================================
-// 3. 교사용 관리자 대시보드 (TeacherFlow)
+// 3. 교사용 관리자 대시보드 (TeacherFlow - Gemini AI 강화)
 // ==========================================
 const TeacherFlow = {
   handleLogin(e) {
@@ -546,24 +525,13 @@ const TeacherFlow = {
   },
 
   runGeminiAnalysis() {
-    App.showLoading("Gemini AI가 방문 데이터를 분석하는 중입니다...");
+    App.showLoading("Gemini AI가 보건실 방문 통계 데이터를 분석 중입니다...");
 
     if (state.isMockMode) {
       setTimeout(() => {
         App.hideLoading();
-        TeacherFlow.renderAiResults({
-          status: "SUCCESS",
-          data_sufficient: true,
-          analysis_period: "2026.11.01 ~ 2026.11.04",
-          total_records: state.requests.length,
-          peak_hours: ["12:30 - 13:20 (점심시간 피크)", "10:50 - 11:00 (3교시 쉬는시간)"],
-          cause_analysis: "점심시간 체육 활동 직후 상처 및 소독(간단 물품) 요청 학생 비율이 전체의 40% 이상 차지함.",
-          operation_recommendations: [
-            "점심시간 10분 전 보건실 입구 간이 자율 소독대 임시 세팅 권장",
-            "5교시 시작 전 두통 및 휴식 요청 학생에 대한 우선 상태 확인 체계 도입"
-          ]
-        });
-      }, 1200);
+        TeacherFlow.renderAiResults(CONFIG.MOCK_DATA.ai_response);
+      }, 1000);
     } else {
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
@@ -574,48 +542,162 @@ const TeacherFlow = {
       .then(res => res.json())
       .then(data => {
         App.hideLoading();
-        TeacherFlow.renderAiResults(data);
+        if (data.status === "ERROR") {
+          alert(`AI 분석 오류: ${data.message}`);
+          if (data.calculated_stats) {
+            TeacherFlow.renderAiResults(data);
+          }
+        } else {
+          TeacherFlow.renderAiResults(data);
+        }
       })
       .catch(err => {
         App.hideLoading();
-        alert("AI 분석 호출 중 오류가 발생했습니다.");
+        alert("Gemini AI 분석 연동 중 통신 에러가 발생했습니다.");
       });
     }
   },
 
+  /**
+   * 실제 통계 수치 (GAS 계산) + Gemini AI 해석 리포트 시각화
+   */
   renderAiResults(res) {
     const container = document.getElementById("container-ai-results");
-    container.innerHTML = `
-      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-6 space-y-4">
-        <div class="flex justify-between items-center border-b border-indigo-200 pb-3">
-          <span class="text-xs font-bold text-indigo-700">AI 분석 기간: ${res.analysis_period}</span>
-          <span class="text-xs font-bold text-indigo-900 bg-indigo-100 px-3 py-1 rounded-full">총 ${res.total_records}건 데이터 분석</span>
+    
+    if (res.status === "ERROR" && !res.calculated_stats) {
+      container.innerHTML = `
+        <div class="p-6 bg-red-50 border border-red-200 rounded-2xl text-center space-y-2">
+          <p class="text-sm font-bold text-red-800">⚠️ AI 분석을 실행할 수 없습니다</p>
+          <p class="text-xs text-red-600">${res.message || "오류가 발생했습니다."}</p>
         </div>
+      `;
+      return;
+    }
 
-        <div class="space-y-2">
-          <h4 class="font-bold text-indigo-950 text-sm">🔥 혼잡 집계 시간대</h4>
-          <ul class="list-disc list-inside text-xs text-indigo-900 space-y-1">
-            ${res.peak_hours.map(h => `<li>${h}</li>`).join("")}
-          </ul>
+    const calc = res.calculated_stats || { visit_type_ratios: {}, hourly_counts: {}, day_of_week_counts: {} };
+    const ai = res.ai_analysis;
+
+    let html = `
+      <!-- 1. GAS 백엔드 계산 정밀 통계 지표 카드 -->
+      <div class="bg-slate-900 text-white rounded-2xl p-6 space-y-4 shadow-lg">
+        <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+          <span class="text-xs font-bold text-emerald-400">📊 100% 검증된 실제 집계 통계 (GAS 계산 Engine)</span>
+          <span class="text-xs text-slate-400">총 누적: <strong class="text-white">${calc.total_count || 0}건</strong></span>
         </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <!-- 방문 유형 비율 -->
+          <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+            <p class="font-bold text-slate-300">방문 유형별 집계 비율</p>
+            <div class="space-y-1">
+              ${Object.entries(calc.visit_type_ratios || {}).map(([name, item]) => `
+                <div class="flex justify-between">
+                  <span class="text-slate-400">${name}:</span>
+                  <span class="font-bold text-emerald-400">${item.count}건 (${item.ratio})</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
 
-        <div class="space-y-2">
-          <h4 class="font-bold text-indigo-950 text-sm">🔍 혼잡 원인 분석</h4>
-          <p class="text-xs text-indigo-900 leading-relaxed">${res.cause_analysis}</p>
+          <!-- 시간대별 수치 -->
+          <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+            <p class="font-bold text-slate-300">시간대별 접수량</p>
+            <div class="space-y-1">
+              ${Object.keys(calc.hourly_counts || {}).length === 0 ? `<p class="text-slate-500">기록 없음</p>` : ""}
+              ${Object.entries(calc.hourly_counts || {}).map(([hour, cnt]) => `
+                <div class="flex justify-between">
+                  <span class="text-slate-400">${hour}:</span>
+                  <span class="font-bold text-cyan-400">${cnt}건</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+
+          <!-- 요일별 수치 -->
+          <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+            <p class="font-bold text-slate-300">요일별 방문 패턴</p>
+            <div class="space-y-1">
+              ${Object.entries(calc.day_of_week_counts || {}).map(([day, cnt]) => `
+                <div class="flex justify-between">
+                  <span class="text-slate-400">${day}요일:</span>
+                  <span class="font-bold text-purple-400">${cnt}건</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
         </div>
-
-        <div class="space-y-2">
-          <h4 class="font-bold text-indigo-950 text-sm">💡 보건실 운영 개선 방향 제안</h4>
-          <ul class="list-disc list-inside text-xs text-indigo-900 space-y-1">
-            ${res.operation_recommendations.map(r => `<li>${r}</li>`).join("")}
-          </ul>
-        </div>
-
-        <p class="text-[11px] text-indigo-400 pt-2 border-t border-indigo-200">
-          ※ 본 AI 리포트는 익명 집계 수치를 기반으로 한 운영 참고 자료이며, 모든 보건 판단 권한은 보건교사에게 있습니다.
-        </p>
       </div>
     `;
+
+    // 2. Gemini AI 해석 리포트 렌더링
+    if (ai) {
+      html += `
+        <div class="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-6 space-y-5 shadow-sm">
+          <div class="flex justify-between items-center border-b border-indigo-200 pb-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">✨</span>
+              <h4 class="font-bold text-indigo-950 text-base">Gemini 2.5 Flash AI 인사이트 리포트</h4>
+            </div>
+            <span class="text-xs text-indigo-700 font-semibold bg-indigo-100 px-3 py-1 rounded-full">분석 시각: ${res.analyzed_at || "방금 전"}</span>
+          </div>
+
+          <!-- AI 총평 -->
+          <div class="bg-white p-4 rounded-xl border border-indigo-100 shadow-xs">
+            <p class="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">AI 1줄 총평</p>
+            <p class="text-sm font-bold text-indigo-950 leading-relaxed">"${ai.ai_summary}"</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 혼잡 분석 및 예측 -->
+            <div class="bg-white p-4 rounded-xl border border-indigo-100 space-y-2">
+              <h5 class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
+                <span>🔥</span><span>혼잡 패턴 분석 & 예측</span>
+              </h5>
+              <p class="text-xs text-slate-700 leading-relaxed"><strong>패턴:</strong> ${ai.peak_hours_analysis}</p>
+              <div class="p-2.5 bg-indigo-50/70 rounded-lg border border-indigo-100">
+                <p class="text-xs text-indigo-900"><strong>🔮 혼잡 예측:</strong> ${ai.peak_hours_prediction}</p>
+              </div>
+            </div>
+
+            <!-- 혼잡 원인 분석 -->
+            <div class="bg-white p-4 rounded-xl border border-indigo-100 space-y-2">
+              <h5 class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
+                <span>🔍</span><span>유형별 혼잡 원인 분석</span>
+              </h5>
+              <p class="text-xs text-slate-700 leading-relaxed">${ai.cause_analysis_by_type}</p>
+            </div>
+          </div>
+
+          <!-- 운영 개선 제안 -->
+          <div class="bg-white p-4 rounded-xl border border-indigo-100 space-y-2">
+            <h5 class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
+              <span>💡</span><span>보건실 운영 효율화 제안</span>
+            </h5>
+            <ul class="space-y-1.5 pl-1">
+              ${(ai.operation_recommendations || []).map(rec => `
+                <li class="text-xs text-slate-700 flex items-start space-x-2">
+                  <span class="text-emerald-500 font-bold">✓</span>
+                  <span>${rec}</span>
+                </li>
+              `).join("")}
+            </ul>
+          </div>
+
+          <p class="text-[11px] text-slate-400 text-center pt-2">
+            ※ 본 AI 분석은 실제 집계 수치(GAS)를 바탕으로 Gemini 모델이 생성한 운영 제안이며, 최종 보건 판단 및 관리는 보건교사가 전담합니다.
+          </p>
+        </div>
+      `;
+    } else if (res.status === "ERROR") {
+      html += `
+        <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-1">
+          <p class="font-bold">⚠️ Gemini API 호출 안내: ${res.message}</p>
+          <p class="text-amber-600">위의 상단 실제 집계 통계는 정상적으로 계산되어 제공됩니다.</p>
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
   },
 
   openDetailModal(reqId) {
@@ -675,5 +757,4 @@ const ManualModal = {
   }
 };
 
-// 문서 로드 완료 후 앱 시작
 document.addEventListener("DOMContentLoaded", App.init);
