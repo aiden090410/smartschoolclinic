@@ -227,10 +227,10 @@ const StudentFlow = {
         StudentFlow.showCompletionScreen(mockTicket);
       }, 700);
     } else {
+      // CORS Preflight 우회를 위해 text/plain 헤더로 전송
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       })
       .then(res => res.json())
@@ -246,6 +246,7 @@ const StudentFlow = {
       .catch(err => {
         App.hideLoading();
         alert("서버 통신 중 오류가 발생했습니다.");
+        console.error("Fetch Error:", err);
       });
     }
   },
@@ -326,7 +327,7 @@ StudentFlow.nextStep = function(stepNumber) {
 };
 
 // ==========================================
-// 3. 교사용 관리자 대시보드 (TeacherFlow - Gemini AI 강화)
+// 3. 교사용 관리자 대시보드 (TeacherFlow)
 // ==========================================
 const TeacherFlow = {
   handleLogin(e) {
@@ -346,10 +347,10 @@ const TeacherFlow = {
         TeacherFlow.openDashboard();
       }, 500);
     } else {
+      // CORS Preflight 우회를 위해 text/plain 헤더 적용
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "adminLogin", password: password })
       })
       .then(res => res.json())
@@ -369,6 +370,7 @@ const TeacherFlow = {
       .catch(err => {
         App.hideLoading();
         alert("로그인 인증 중 에러가 발생했습니다.");
+        console.error("Login Fetch Error:", err);
       });
     }
   },
@@ -455,8 +457,7 @@ const TeacherFlow = {
     if (!state.isMockMode) {
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "updateStatus", token: state.authToken, request_id: reqId, status: newStatus })
       });
     }
@@ -535,8 +536,7 @@ const TeacherFlow = {
     } else {
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "runGeminiAnalysis", token: state.authToken })
       })
       .then(res => res.json())
@@ -558,9 +558,6 @@ const TeacherFlow = {
     }
   },
 
-  /**
-   * 실제 통계 수치 (GAS 계산) + Gemini AI 해석 리포트 시각화
-   */
   renderAiResults(res) {
     const container = document.getElementById("container-ai-results");
     
@@ -578,7 +575,6 @@ const TeacherFlow = {
     const ai = res.ai_analysis;
 
     let html = `
-      <!-- 1. GAS 백엔드 계산 정밀 통계 지표 카드 -->
       <div class="bg-slate-900 text-white rounded-2xl p-6 space-y-4 shadow-lg">
         <div class="flex justify-between items-center border-b border-slate-700 pb-3">
           <span class="text-xs font-bold text-emerald-400">📊 100% 검증된 실제 집계 통계 (GAS 계산 Engine)</span>
@@ -586,7 +582,6 @@ const TeacherFlow = {
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          <!-- 방문 유형 비율 -->
           <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
             <p class="font-bold text-slate-300">방문 유형별 집계 비율</p>
             <div class="space-y-1">
@@ -599,7 +594,6 @@ const TeacherFlow = {
             </div>
           </div>
 
-          <!-- 시간대별 수치 -->
           <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
             <p class="font-bold text-slate-300">시간대별 접수량</p>
             <div class="space-y-1">
@@ -613,7 +607,6 @@ const TeacherFlow = {
             </div>
           </div>
 
-          <!-- 요일별 수치 -->
           <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
             <p class="font-bold text-slate-300">요일별 방문 패턴</p>
             <div class="space-y-1">
@@ -629,7 +622,6 @@ const TeacherFlow = {
       </div>
     `;
 
-    // 2. Gemini AI 해석 리포트 렌더링
     if (ai) {
       html += `
         <div class="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-6 space-y-5 shadow-sm">
@@ -641,14 +633,12 @@ const TeacherFlow = {
             <span class="text-xs text-indigo-700 font-semibold bg-indigo-100 px-3 py-1 rounded-full">분석 시각: ${res.analyzed_at || "방금 전"}</span>
           </div>
 
-          <!-- AI 총평 -->
           <div class="bg-white p-4 rounded-xl border border-indigo-100 shadow-xs">
             <p class="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">AI 1줄 총평</p>
             <p class="text-sm font-bold text-indigo-950 leading-relaxed">"${ai.ai_summary}"</p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 혼잡 분석 및 예측 -->
             <div class="bg-white p-4 rounded-xl border border-indigo-100 space-y-2">
               <h5 class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
                 <span>🔥</span><span>혼잡 패턴 분석 & 예측</span>
@@ -659,7 +649,6 @@ const TeacherFlow = {
               </div>
             </div>
 
-            <!-- 혼잡 원인 분석 -->
             <div class="bg-white p-4 rounded-xl border border-indigo-100 space-y-2">
               <h5 class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
                 <span>🔍</span><span>유형별 혼잡 원인 분석</span>
@@ -668,7 +657,6 @@ const TeacherFlow = {
             </div>
           </div>
 
-          <!-- 운영 개선 제안 -->
           <div class="bg-white p-4 rounded-xl border border-indigo-100 space-y-2">
             <h5 class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
               <span>💡</span><span>보건실 운영 효율화 제안</span>
