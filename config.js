@@ -3,7 +3,7 @@
  */
 const CONFIG = {
   // Google Apps Script 웹 앱 배포 URL (배포 후 생성된 URL을 입력하세요)
-  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbwGIWTfZLoFCQJ1gH3v815eNqHwGJMyivH-2kwQE5NP4T_qBE_9nyW2AedO6kqVrwuC/exec", 
+  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxu6t4y3UvkUrYTz_XM5rUJZzk3lCbXxCK3EOrC7D1x3SokSPBA3ExKObCf-C73b2vy/exec", 
 
   // 타이머 설정 (밀리초 단위)
   TIMERS: {
