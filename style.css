@@ -1,6 +1,5 @@
 @charset "UTF-8";
 
-/* Pretendard 폰트 웹로드 */
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 * {
@@ -13,7 +12,6 @@ input, textarea {
   user-select: text;
 }
 
-/* 터치 최적화 클릭 애니메이션 */
 .touch-effect {
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease;
 }
@@ -21,7 +19,6 @@ input, textarea {
   transform: scale(0.96);
 }
 
-/* 펄스 애니메이션 */
 @keyframes pulse-subtle {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.02); }
@@ -30,7 +27,6 @@ input, textarea {
   animation: pulse-subtle 2s infinite ease-in-out;
 }
 
-/* 대기 카운트다운 프로그래스 바 */
 @keyframes progress-shrink {
   from { width: 100%; }
   to { width: 0%; }
@@ -39,7 +35,6 @@ input, textarea {
   animation: progress-shrink 15s linear forwards;
 }
 
-/* 커스텀 스크롤바 디자인 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
