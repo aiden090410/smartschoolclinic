@@ -20,7 +20,7 @@
         </div>
         <div>
           <h1 class="text-lg font-bold text-slate-900 leading-tight">스마트 보건실</h1>
-          <p class="text-xs text-slate-500 font-medium">통합 대기 관리 & AI 분석</p>
+          <p class="text-xs text-slate-500 font-medium">통합 대기 관리 & 방문 통계</p>
         </div>
       </div>
 
@@ -206,7 +206,7 @@
 
     </section>
 
-    <!-- B. 교사용 관리자 대시보드 (Screen 7 ~ 12) -->
+    <!-- B. 교사용 관리자 대시보드 (Screen 7 ~ 11) -->
     <section id="view-teacher" class="w-full space-y-6 hidden">
       
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm gap-3">
@@ -214,10 +214,6 @@
           <button id="tab-btn-dashboard" onclick="TeacherFlow.switchTab('dashboard')" class="px-4 py-2 rounded-xl text-sm font-bold bg-slate-900 text-white transition">대시보드</button>
           <button id="tab-btn-kanban" onclick="TeacherFlow.switchTab('kanban')" class="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">유형별 대기열</button>
           <button id="tab-btn-stats" onclick="TeacherFlow.switchTab('stats')" class="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">방문 통계</button>
-          <button id="tab-btn-ai" onclick="TeacherFlow.switchTab('ai')" class="px-4 py-2 rounded-xl text-sm font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition flex items-center space-x-1">
-            <span>✨</span>
-            <span>Gemini AI 분석</span>
-          </button>
         </div>
         <div class="text-xs font-semibold text-slate-500 self-end sm:self-center flex items-center space-x-2">
           <span>실시간 동기화</span>
@@ -294,28 +290,6 @@
         </div>
       </div>
 
-      <!-- Tab 4: Gemini AI 운영 분석 화면 (Step 5 완성) -->
-      <div id="teacher-tab-ai" class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6 hidden">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4">
-          <div>
-            <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
-              <span>✨ Gemini 2.5 Flash AI 보건실 운영 분석</span>
-            </h3>
-            <p class="text-xs text-slate-500 mt-0.5">GAS에서 정확히 계산된 집계 수치와 Gemini AI의 해석을 결합하여 운영 개선 방안을 제공합니다.</p>
-          </div>
-          <button onclick="TeacherFlow.runGeminiAnalysis()" class="px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition touch-effect flex items-center space-x-2">
-            <span>✨</span>
-            <span>AI 분석 리포트 생성</span>
-          </button>
-        </div>
-
-        <div id="container-ai-results" class="space-y-4">
-          <div class="text-center py-12 text-slate-400 text-sm">
-            상단 [AI 분석 리포트 생성] 버튼을 클릭하면 실시간 분석이 진행됩니다.
-          </div>
-        </div>
-      </div>
-
     </section>
 
   </main>
@@ -343,7 +317,7 @@
       <div class="p-6 overflow-y-auto space-y-4 text-sm text-slate-700 flex-1">
         <div id="manual-content-1" class="space-y-3">
           <h4 class="font-bold text-slate-900 text-base">① 프로그램 소개</h4>
-          <p>학교 보건실 대기시간 단축 및 방문 유형별 대기열 분리를 목적으로 개발된 스마트 보건실 시스템입니다.</p>
+          <p>학교 보건실 대기시간 단축 및 방문 유형별 대기열 분리를 목적으로 개발된 스마트 보건실 관리 시스템입니다.</p>
         </div>
 
         <div id="manual-content-2" class="space-y-3 hidden">
@@ -358,7 +332,11 @@
 
         <div id="manual-content-4" class="space-y-4 hidden">
           <h4 class="font-bold text-slate-900 text-base">④ 핵심 기능 3가지 사용법</h4>
-          <p>1. 학생 접수 및 대기열 발권 / 2. 교사 접수 상태 변경 / 3. Gemini AI 운영 데이터 분석</p>
+          <ol class="list-decimal pl-5 space-y-2 text-xs font-semibold text-slate-800">
+            <li><strong>학생 접수 및 유형별 대기열 이용:</strong> 태블릿 화면에서 학년/반/이름을 입력하고 방문 목적(물품, 휴식, 외상 등)을 선택하여 번호표를 발급받습니다.</li>
+            <li><strong>교사용 접수 확인 및 대기열 관리:</strong> 관리자 로그인 후 실시간 대시보드에서 대기 상태 변경(상담 시작, 처치 완료)을 처리합니다.</li>
+            <li><strong>방문 통계 확인 및 조회:</strong> 방문 통계 탭에서 유형별 비율 및 시간대별 접수 피크 데이터를 그래프 형태로 확인합니다.</li>
+          </ol>
         </div>
 
         <div id="manual-content-5" class="space-y-3 hidden">
