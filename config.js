@@ -3,7 +3,7 @@
  */
 const CONFIG = {
   // Google Apps Script 웹 앱 배포 URL (4단계 백엔드 구현 후 이곳에 주소 입력)
-  GAS_WEB_APP_URL: "", 
+  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbwXxdjvXCN0f0yxH53AHZDjL7guXIEJNUX_RSeIjnui4147CW3HHOIibqVaG7NQU1aO/exec", 
 
   // 타이머 설정 (밀리초 단위)
   TIMERS: {
