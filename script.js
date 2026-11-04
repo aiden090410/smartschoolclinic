@@ -15,6 +15,7 @@ const state = {
 
   requests: [],
   serverStats: null,
+  statsPeriod: "all", // "all", "today", "7days", "30days"
   
   idleTimer: null,
   completionTimer: null,
@@ -22,6 +23,13 @@ const state = {
   pollingTimer: null,
   
   isMockMode: false
+};
+
+// Chart.js 차트 인스턴스 참조 변수
+const statsChartInstances = {
+  dailyTrend: null,
+  purposePie: null,
+  hourlyBar: null
 };
 
 // ==========================================
@@ -42,7 +50,6 @@ async function fetchApi(action, payload = {}) {
     const response = await fetch(CONFIG.GAS_WEB_APP_URL, {
       method: "POST",
       body: requestPayload
-      // 명시적 application/json 헤더 생략으로 CORS OPTIONS Preflight 문제 회피
     });
 
     if (!response.ok) {
@@ -229,7 +236,6 @@ const StudentFlow = {
     StudentFlow.nextStep(4);
   },
 
-  // 1. 학생 접수 → GAS submitRequest 실시간 연동
   async submitFinalRequest() {
     App.showLoading("서버에서 대기 번호를 발급받는 중입니다...");
 
@@ -245,7 +251,6 @@ const StudentFlow = {
 
       App.hideLoading();
 
-      // 2. 접수 완료 화면 → 서버에서 발급한 대기번호 및 대기인원 표시
       state.currentTicket = data.ticket;
       StudentFlow.showCompletionScreen(data.ticket, data.waiting_ahead || 0);
 
@@ -263,7 +268,6 @@ const StudentFlow = {
     StudentFlow.startCompletionTimer();
   },
 
-  // 5. 대기열 관리 → 학생 접수 셀프 취소 연동
   async cancelCurrentRequest() {
     if (!state.currentTicket) return;
 
@@ -339,10 +343,9 @@ StudentFlow.nextStep = function(stepNumber) {
 };
 
 // ==========================================
-// 3. 교사용 관리자 대시보드 (TeacherFlow)
+// 3. 교사용 관리자 대시보드 & 통계 시각화 (TeacherFlow)
 // ==========================================
 const TeacherFlow = {
-  // 3. 관리자 로그인 → 서버 측 인증 (adminLogin API)
   async handleLogin(e) {
     e.preventDefault();
     const password = document.getElementById("input-admin-password").value;
@@ -393,7 +396,6 @@ const TeacherFlow = {
     }
   },
 
-  // 4. 관리자 대시보드 → 서버 데이터 동기화 (getAdminDashboardData API)
   async fetchDashboardData(isSilent = false) {
     if (!isSilent) App.showLoading("최신 방문 대기 목록을 불러오는 중입니다...");
 
@@ -485,7 +487,6 @@ const TeacherFlow = {
     });
   },
 
-  // 5. 대기열 관리 → 접수 상태 변경 (updateStatus API)
   async updateStatus(reqId, newStatus) {
     App.showLoading("서버 Google Sheets에 상태 변경을 반영 중입니다...");
 
@@ -543,7 +544,9 @@ const TeacherFlow = {
     });
   },
 
-  // 6. 통계 화면 → GAS에서 계산한 통계 데이터 조회 (getStats API)
+  // ==========================================
+  // 4. 통계 데이터 집계 및 Chart.js 시각화
+  // ==========================================
   async fetchStatsData(isSilent = false) {
     if (!isSilent) App.showLoading("서버 통계 집계 데이터를 계산 중입니다...");
 
@@ -560,72 +563,235 @@ const TeacherFlow = {
     }
   },
 
+  changeStatsPeriod(period) {
+    state.statsPeriod = period;
+    TeacherFlow.renderStats();
+  },
+
   renderStats() {
-    const containerType = document.getElementById("chart-type-ratios");
-    const containerHourly = document.getElementById("chart-hourly-peaks");
+    const period = state.statsPeriod;
+    const now = new Date();
+    
+    // 1. 기간 필터링 적용 (오늘, 7일, 30일, 전체)
+    const filteredRequests = state.requests.filter(r => {
+      if (!r.timestamp) return false;
+      const reqDate = new Date(r.timestamp);
+      if (isNaN(reqDate.getTime())) return false;
 
-    const stats = state.serverStats;
+      if (period === "today") {
+        return reqDate.toDateString() === now.toDateString();
+      } else if (period === "7days") {
+        const past7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return reqDate >= past7;
+      } else if (period === "30days") {
+        const past30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return reqDate >= past30;
+      }
+      return true; // "all"
+    });
 
-    // 1. 서버 집계 결과가 존재할 경우
-    if (stats && stats.visit_type_ratios) {
-      containerType.innerHTML = "";
-      Object.entries(stats.visit_type_ratios).forEach(([typeName, meta]) => {
-        const pctNum = parseFloat(meta.ratio) || 0;
-        const row = document.createElement("div");
-        row.className = "space-y-1";
-        row.innerHTML = `
-          <div class="flex justify-between text-xs font-bold">
-            <span>${typeName}</span>
-            <span>${meta.count}건 (${meta.ratio})</span>
-          </div>
-          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-            <div class="bg-emerald-500 h-full" style="width: ${pctNum}%"></div>
-          </div>
-        `;
-        containerType.appendChild(row);
-      });
+    const totalCount = filteredRequests.length;
+    const completedCount = filteredRequests.filter(r => r.status === "COMPLETED").length;
+    const activeCount = filteredRequests.filter(r => r.status === "WAITING" || r.status === "IN_PROGRESS").length;
+    const cancelledCount = filteredRequests.filter(r => r.status === "CANCELLED").length;
+    const validRequests = filteredRequests.filter(r => r.status !== "CANCELLED");
 
-      const hourlyCounts = stats.hourly_counts || {};
-      const maxCount = Math.max(...Object.values(hourlyCounts).map(v => Number(v) || 0), 1);
+    const emptyAlert = document.getElementById("stats-empty-alert");
+    const chartsContainer = document.getElementById("stats-charts-container");
 
-      containerHourly.innerHTML = "";
-      Object.entries(hourlyCounts).forEach(([slot, cnt]) => {
-        const pct = Math.round((cnt / maxCount) * 100);
-        const row = document.createElement("div");
-        row.className = "space-y-1";
-        row.innerHTML = `
-          <div class="flex justify-between text-xs font-bold">
-            <span>${slot} 시간대</span>
-            <span>${cnt}건</span>
-          </div>
-          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-            <div class="bg-blue-500 h-full" style="width: ${pct}%"></div>
-          </div>
-        `;
-        containerHourly.appendChild(row);
-      });
-    } else {
-      // 2. 로컬 데이터 폴백 시각화
-      const total = state.requests.length || 1;
-      containerType.innerHTML = "";
-      Object.values(CONFIG.VISIT_TYPES).forEach(type => {
-        const cnt = state.requests.filter(r => r.visit_type === type.id).length;
-        const pct = Math.round((cnt / total) * 100);
+    // 2. 데이터 부재 시 예외 처리
+    if (totalCount === 0) {
+      emptyAlert.classList.remove("hidden");
+      chartsContainer.classList.add("hidden");
 
-        const row = document.createElement("div");
-        row.className = "space-y-1";
-        row.innerHTML = `
-          <div class="flex justify-between text-xs font-bold">
-            <span>${type.name}</span>
-            <span>${cnt}건 (${pct}%)</span>
-          </div>
-          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-            <div class="bg-emerald-500 h-full" style="width: ${pct}%"></div>
-          </div>
-        `;
-        containerType.appendChild(row);
-      });
+      document.getElementById("stat-card-total").textContent = "0건";
+      document.getElementById("stat-card-completed").textContent = "0건";
+      document.getElementById("stat-card-completed-pct").textContent = "전체 중 0%";
+      document.getElementById("stat-card-active").textContent = "0건";
+      document.getElementById("stat-card-cancelled").textContent = "0건";
+      document.getElementById("stat-card-top-purpose").textContent = "데이터 없음";
+      document.getElementById("stat-card-top-purpose-detail").textContent = "접수 수집 필요";
+      document.getElementById("stat-card-period-compare").textContent = "기록 없음";
+      return;
     }
+
+    emptyAlert.classList.add("hidden");
+    chartsContainer.classList.remove("hidden");
+
+    // 3. 카드형 수치 KPI 렌더링
+    document.getElementById("stat-card-total").textContent = `${totalCount}건`;
+    document.getElementById("stat-card-completed").textContent = `${completedCount}건`;
+    
+    const completedPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    document.getElementById("stat-card-completed-pct").textContent = `전체 중 ${completedPct}% 완료`;
+    document.getElementById("stat-card-active").textContent = `${activeCount}건`;
+    document.getElementById("stat-card-cancelled").textContent = `${cancelledCount}건`;
+
+    // 최다 방문 목적 추출
+    const purposeCounts = {};
+    Object.values(CONFIG.VISIT_TYPES).forEach(t => purposeCounts[t.id] = 0);
+    
+    validRequests.forEach(r => {
+      if (purposeCounts[r.visit_type] !== undefined) purposeCounts[r.visit_type]++;
+    });
+
+    let topTypeId = null;
+    let maxCnt = -1;
+    Object.entries(purposeCounts).forEach(([tid, cnt]) => {
+      if (cnt > maxCnt && cnt > 0) {
+        maxCnt = cnt;
+        topTypeId = tid;
+      }
+    });
+
+    if (topTypeId && CONFIG.VISIT_TYPES[topTypeId]) {
+      const topMeta = CONFIG.VISIT_TYPES[topTypeId];
+      const pct = validRequests.length > 0 ? Math.round((maxCnt / validRequests.length) * 100) : 0;
+      document.getElementById("stat-card-top-purpose").textContent = `${topMeta.icon} ${topMeta.name}`;
+      document.getElementById("stat-card-top-purpose-detail").textContent = `${maxCnt}건 (${pct}%) 점유`;
+    } else {
+      document.getElementById("stat-card-top-purpose").textContent = "접수 없음";
+      document.getElementById("stat-card-top-purpose-detail").textContent = "유효 접수 부재";
+    }
+
+    // 기간 비교 (오늘 vs 어제 또는 전체 대비)
+    if (period === "today") {
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const yestCnt = state.requests.filter(r => r.timestamp && new Date(r.timestamp).toDateString() === yesterday.toDateString()).length;
+      const diff = totalCount - yestCnt;
+      document.getElementById("stat-card-period-compare").textContent = diff >= 0 ? `▲ +${diff}건` : `▼ ${diff}건`;
+      document.getElementById("stat-card-period-compare-sub").textContent = `어제(${yestCnt}건) 대비`;
+    } else {
+      document.getElementById("stat-card-period-compare").textContent = `${validRequests.length}건 유효`;
+      document.getElementById("stat-card-period-compare-sub").textContent = `취소 ${cancelledCount}건 제외`;
+    }
+
+    // 4. Chart.js 시각화 차트 3종 생성
+    TeacherFlow.renderDailyTrendChart(validRequests);
+    TeacherFlow.renderPurposePieChart(purposeCounts, validRequests.length);
+    TeacherFlow.renderHourlyBarChart(validRequests);
+  },
+
+  // 차트 1: 날짜별 추이 선그래프
+  renderDailyTrendChart(requests) {
+    const dailyMap = {};
+    requests.forEach(r => {
+      if (r.timestamp) {
+        const dateStr = r.timestamp.split(" ")[0];
+        dailyMap[dateStr] = (dailyMap[dateStr] || 0) + 1;
+      }
+    });
+
+    const labels = Object.keys(dailyMap).sort();
+    const dataValues = labels.map(l => dailyMap[l]);
+
+    const ctx = document.getElementById("chart-daily-trend").getContext("2d");
+    if (statsChartInstances.dailyTrend) statsChartInstances.dailyTrend.destroy();
+
+    statsChartInstances.dailyTrend = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels.length > 0 ? labels : ["오늘"],
+        datasets: [{
+          label: "접수 건수",
+          data: dataValues.length > 0 ? dataValues : [0],
+          borderColor: "#10b981",
+          backgroundColor: "rgba(16, 185, 129, 0.1)",
+          borderWidth: 3,
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: "#059669",
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+  },
+
+  // 차트 2: 방문 목적별 비율 도넛그래프
+  renderPurposePieChart(purposeCounts, validTotal) {
+    const labels = Object.values(CONFIG.VISIT_TYPES).map(t => t.name);
+    const dataValues = Object.keys(CONFIG.VISIT_TYPES).map(tid => purposeCounts[tid] || 0);
+
+    const ctx = document.getElementById("chart-purpose-pie").getContext("2d");
+    if (statsChartInstances.purposePie) statsChartInstances.purposePie.destroy();
+
+    statsChartInstances.purposePie = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: labels,
+        datasets: [{
+          data: dataValues,
+          backgroundColor: [
+            "#10b981", // emerald
+            "#3b82f6", // blue
+            "#f97316", // orange
+            "#a855f7", // purple
+            "#ef4444"  // red
+          ],
+          borderWidth: 2,
+          borderColor: "#ffffff"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } }
+        }
+      }
+    });
+  },
+
+  // 차트 3: 시간대별 접수 막대그래프
+  renderHourlyBarChart(requests) {
+    const hourlyMap = {};
+    for (let h = 9; h <= 16; h++) {
+      hourlyMap[`${String(h).padStart(2, '0')}:00`] = 0;
+    }
+
+    requests.forEach(r => {
+      if (r.timestamp) {
+        const hour = new Date(r.timestamp).getHours();
+        const slot = `${String(hour).padStart(2, '0')}:00`;
+        if (hourlyMap[slot] !== undefined) hourlyMap[slot]++;
+      }
+    });
+
+    const labels = Object.keys(hourlyMap);
+    const dataValues = Object.values(hourlyMap);
+
+    const ctx = document.getElementById("chart-hourly-bar").getContext("2d");
+    if (statsChartInstances.hourlyBar) statsChartInstances.hourlyBar.destroy();
+
+    statsChartInstances.hourlyBar = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "방문 건수",
+          data: dataValues,
+          backgroundColor: "#3b82f6",
+          borderRadius: 8,
+          hoverBackgroundColor: "#2563eb"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+      }
+    });
   },
 
   openDetailModal(reqId) {
@@ -660,7 +826,7 @@ const TeacherFlow = {
 };
 
 // ==========================================
-// 4. 사용자 매뉴얼 모달 (ManualModal)
+// 5. 사용자 매뉴얼 모달 (ManualModal)
 // ==========================================
 const ManualModal = {
   open() {
