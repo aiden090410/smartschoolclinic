@@ -2,17 +2,17 @@
  * 스마트 보건실 통합 관리 시스템 - 전역 설정 파일 (config.js)
  */
 const CONFIG = {
-  // Google Apps Script 웹 앱 배포 URL (실제 URL 입력)
+  // Google Apps Script 웹 앱 배포 URL (배포 후 생성된 URL을 입력하세요)
   GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbwGIWTfZLoFCQJ1gH3v815eNqHwGJMyivH-2kwQE5NP4T_qBE_9nyW2AedO6kqVrwuC/exec", 
 
   // 타이머 설정 (밀리초 단위)
   TIMERS: {
     IDLE_TIMEOUT_MS: 30000,      // 학생 접수 중 부재 시 자동 초기화 (30초)
     COMPLETION_RESET_MS: 15000,  // 접수 완료 화면 유지 시간 (15초)
-    POLLING_INTERVAL_MS: 10000   // 대시보드 실시간 갱신 주기 (10초)
+    POLLING_INTERVAL_MS: 8000    // 관리자 대시보드 실시간 자동 갱신 주기 (8초)
   },
 
-  // 5가지 방문 유형 정의 및 메타데이터
+  // 5가지 방문 유형 메타데이터
   VISIT_TYPES: {
     TYPE_1: {
       id: "TYPE_1",
@@ -59,47 +59,5 @@ const CONFIG = {
       description: "위 카테고리에 해당하지 않거나 즉시 보건교사 확인 건",
       options: ["기타 사유", "교사 직접 확인 필요", "긴급 건강 상담"]
     }
-  },
-
-  // 백엔드 미연동 시 시뮬레이션용 Mock Data
-  MOCK_DATA: {
-    requests: [
-      {
-        id: "REQ-20261104-001",
-        timestamp: "2026-11-04 13:45:10",
-        student_id: "20315",
-        student_name: "김철수",
-        visit_type: "TYPE_2",
-        type_name: "휴식 요청",
-        detail_option: "두통/어지러움",
-        queue_no: "B-01",
-        status: "IN_PROGRESS",
-        updated_at: "2026-11-04 13:50:00"
-      },
-      {
-        id: "REQ-20261104-002",
-        timestamp: "2026-11-04 13:52:00",
-        student_id: "10104",
-        student_name: "이영희",
-        visit_type: "TYPE_1",
-        type_name: "간단한 물품 요청",
-        detail_option: "밴드/반창고",
-        queue_no: "A-01",
-        status: "WAITING",
-        updated_at: "2026-11-04 13:52:00"
-      },
-      {
-        id: "REQ-20261104-003",
-        timestamp: "2026-11-04 13:58:30",
-        student_id: "30512",
-        student_name: "박민수",
-        visit_type: "TYPE_5",
-        type_name: "기타 및 직접 확인 필요",
-        detail_option: "긴급 건강 상담",
-        queue_no: "E-01",
-        status: "WAITING",
-        updated_at: "2026-11-04 13:58:30"
-      }
-    ]
   }
 };
