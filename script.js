@@ -15,7 +15,7 @@ const state = {
 
   requests: [],
   serverStats: null,
-  statsPeriod: "all", // "all", "today", "7days", "30days"
+  statsPeriod: "all",
   
   idleTimer: null,
   completionTimer: null,
@@ -25,7 +25,6 @@ const state = {
   isMockMode: false
 };
 
-// Chart.js 차트 인스턴스 참조 변수
 const statsChartInstances = {
   dailyTrend: null,
   purposePie: null,
@@ -572,7 +571,6 @@ const TeacherFlow = {
     const period = state.statsPeriod;
     const now = new Date();
     
-    // 1. 기간 필터링 적용 (오늘, 7일, 30일, 전체)
     const filteredRequests = state.requests.filter(r => {
       if (!r.timestamp) return false;
       const reqDate = new Date(r.timestamp);
@@ -587,7 +585,7 @@ const TeacherFlow = {
         const past30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         return reqDate >= past30;
       }
-      return true; // "all"
+      return true;
     });
 
     const totalCount = filteredRequests.length;
@@ -599,7 +597,6 @@ const TeacherFlow = {
     const emptyAlert = document.getElementById("stats-empty-alert");
     const chartsContainer = document.getElementById("stats-charts-container");
 
-    // 2. 데이터 부재 시 예외 처리
     if (totalCount === 0) {
       emptyAlert.classList.remove("hidden");
       chartsContainer.classList.add("hidden");
@@ -618,7 +615,6 @@ const TeacherFlow = {
     emptyAlert.classList.add("hidden");
     chartsContainer.classList.remove("hidden");
 
-    // 3. 카드형 수치 KPI 렌더링
     document.getElementById("stat-card-total").textContent = `${totalCount}건`;
     document.getElementById("stat-card-completed").textContent = `${completedCount}건`;
     
@@ -627,7 +623,6 @@ const TeacherFlow = {
     document.getElementById("stat-card-active").textContent = `${activeCount}건`;
     document.getElementById("stat-card-cancelled").textContent = `${cancelledCount}건`;
 
-    // 최다 방문 목적 추출
     const purposeCounts = {};
     Object.values(CONFIG.VISIT_TYPES).forEach(t => purposeCounts[t.id] = 0);
     
@@ -654,7 +649,6 @@ const TeacherFlow = {
       document.getElementById("stat-card-top-purpose-detail").textContent = "유효 접수 부재";
     }
 
-    // 기간 비교 (오늘 vs 어제 또는 전체 대비)
     if (period === "today") {
       const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const yestCnt = state.requests.filter(r => r.timestamp && new Date(r.timestamp).toDateString() === yesterday.toDateString()).length;
@@ -666,13 +660,11 @@ const TeacherFlow = {
       document.getElementById("stat-card-period-compare-sub").textContent = `취소 ${cancelledCount}건 제외`;
     }
 
-    // 4. Chart.js 시각화 차트 3종 생성
     TeacherFlow.renderDailyTrendChart(validRequests);
     TeacherFlow.renderPurposePieChart(purposeCounts, validRequests.length);
     TeacherFlow.renderHourlyBarChart(validRequests);
   },
 
-  // 차트 1: 날짜별 추이 선그래프
   renderDailyTrendChart(requests) {
     const dailyMap = {};
     requests.forEach(r => {
@@ -715,7 +707,6 @@ const TeacherFlow = {
     });
   },
 
-  // 차트 2: 방문 목적별 비율 도넛그래프
   renderPurposePieChart(purposeCounts, validTotal) {
     const labels = Object.values(CONFIG.VISIT_TYPES).map(t => t.name);
     const dataValues = Object.keys(CONFIG.VISIT_TYPES).map(tid => purposeCounts[tid] || 0);
@@ -730,11 +721,11 @@ const TeacherFlow = {
         datasets: [{
           data: dataValues,
           backgroundColor: [
-            "#10b981", // emerald
-            "#3b82f6", // blue
-            "#f97316", // orange
-            "#a855f7", // purple
-            "#ef4444"  // red
+            "#10b981",
+            "#3b82f6",
+            "#f97316",
+            "#a855f7",
+            "#ef4444"
           ],
           borderWidth: 2,
           borderColor: "#ffffff"
@@ -750,7 +741,6 @@ const TeacherFlow = {
     });
   },
 
-  // 차트 3: 시간대별 접수 막대그래프
   renderHourlyBarChart(requests) {
     const hourlyMap = {};
     for (let h = 9; h <= 16; h++) {
@@ -841,10 +831,10 @@ const ManualModal = {
       const content = document.getElementById(`manual-content-${i}`);
       
       if (i === tabNum) {
-        btn.className = "py-3 px-4 border-b-2 border-emerald-500 text-emerald-600 font-bold whitespace-nowrap";
+        btn.className = "py-3 px-3.5 border-b-2 border-emerald-500 text-emerald-600 font-bold whitespace-nowrap transition";
         content.classList.remove("hidden");
       } else {
-        btn.className = "py-3 px-4 border-b-2 border-transparent text-slate-500 hover:text-slate-900 font-bold whitespace-nowrap";
+        btn.className = "py-3 px-3.5 border-b-2 border-transparent text-slate-500 hover:text-slate-900 font-bold whitespace-nowrap transition";
         content.classList.add("hidden");
       }
     }
