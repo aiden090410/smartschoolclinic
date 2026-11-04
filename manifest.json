@@ -1,0 +1,23 @@
+{
+  "name": "스마트 보건실 통합 관리 시스템",
+  "short_name": "스마트보건실",
+  "description": "LABIT 스마트 보건실 대기 관리 및 방문 통계 시스템",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
