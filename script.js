@@ -33,10 +33,12 @@ const App = {
     window.addEventListener("offline", App.updateNetworkStatus);
     App.updateNetworkStatus();
 
-    if (!CONFIG.GAS_WEB_APP_URL || CONFIG.GAS_WEB_APP_URL.trim() === "") {
+    // GAS URL 미설정 또는 기본 템플릿 값 검증
+    if (!CONFIG.GAS_WEB_APP_URL || CONFIG.GAS_WEB_APP_URL.trim() === "" || CONFIG.GAS_WEB_APP_URL.includes("YOUR_SCRIPT_ID")) {
       state.isMockMode = true;
       document.getElementById("mock-banner").classList.remove("hidden");
       state.requests = [...CONFIG.MOCK_DATA.requests];
+      console.warn("GAS_WEB_APP_URL이 설정되지 않아 시뮬레이션 [테스트 모드]로 동작합니다.");
     }
 
     StudentFlow.renderVisitTypes();
@@ -227,13 +229,17 @@ const StudentFlow = {
         StudentFlow.showCompletionScreen(mockTicket);
       }, 700);
     } else {
-      // CORS Preflight 우회를 위해 text/plain 헤더로 전송
+      // PREFLIGHT(OPTIONS) 차단을 완전히 방지하기 위해 headers 옵션을 생략하고 순수 POST 전송
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP 오류 상태: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
         App.hideLoading();
         if (data.status === "SUCCESS") {
@@ -245,8 +251,8 @@ const StudentFlow = {
       })
       .catch(err => {
         App.hideLoading();
-        alert("서버 통신 중 오류가 발생했습니다.");
-        console.error("Fetch Error:", err);
+        console.error("접수 등록 통신 에러:", err);
+        alert(`서버 통신 오류가 발생했습니다.\n\n[확인사항]\n1. GAS 배포 권한이 '모든 사용자(Anyone)'인지 확인해주세요.\n2. GAS 편집기에서 setupDatabase 실행을 통해 구글 권한 승인이 완료되었는지 확인해주세요.\n\n(상세 내용: ${err.message})`);
       });
     }
   },
@@ -347,13 +353,17 @@ const TeacherFlow = {
         TeacherFlow.openDashboard();
       }, 500);
     } else {
-      // CORS Preflight 우회를 위해 text/plain 헤더 적용
+      // PREFLIGHT(OPTIONS) 차단을 방지하기 위해 headers 생략
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "adminLogin", password: password })
       })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP 응답 에러: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
         App.hideLoading();
         if (data.status === "SUCCESS") {
@@ -364,13 +374,13 @@ const TeacherFlow = {
           App.updateAuthUI();
           TeacherFlow.openDashboard();
         } else {
-          alert("비밀번호가 올바르지 않습니다.");
+          alert(`로그인 실패: ${data.message}`);
         }
       })
       .catch(err => {
         App.hideLoading();
-        alert("로그인 인증 중 에러가 발생했습니다.");
-        console.error("Login Fetch Error:", err);
+        console.error("로그인 연동 통신 에러:", err);
+        alert(`관리자 로그인 통신 에러가 발생했습니다.\n\nGAS 배포 옵션의 액세스 권한이 '모든 사용자(Anyone)'로 되었는지 점검해 주세요.\n(상세 내용: ${err.message})`);
       });
     }
   },
@@ -457,7 +467,6 @@ const TeacherFlow = {
     if (!state.isMockMode) {
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "updateStatus", token: state.authToken, request_id: reqId, status: newStatus })
       });
     }
@@ -536,7 +545,6 @@ const TeacherFlow = {
     } else {
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "runGeminiAnalysis", token: state.authToken })
       })
       .then(res => res.json())
