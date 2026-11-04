@@ -33,12 +33,10 @@ const App = {
     window.addEventListener("offline", App.updateNetworkStatus);
     App.updateNetworkStatus();
 
-    // GAS URL 미설정 또는 기본 템플릿 값 검증
     if (!CONFIG.GAS_WEB_APP_URL || CONFIG.GAS_WEB_APP_URL.trim() === "" || CONFIG.GAS_WEB_APP_URL.includes("YOUR_SCRIPT_ID")) {
       state.isMockMode = true;
       document.getElementById("mock-banner").classList.remove("hidden");
       state.requests = [...CONFIG.MOCK_DATA.requests];
-      console.warn("GAS_WEB_APP_URL이 설정되지 않아 시뮬레이션 [테스트 모드]로 동작합니다.");
     }
 
     StudentFlow.renderVisitTypes();
@@ -229,15 +227,12 @@ const StudentFlow = {
         StudentFlow.showCompletionScreen(mockTicket);
       }, 700);
     } else {
-      // PREFLIGHT(OPTIONS) 차단을 완전히 방지하기 위해 headers 옵션을 생략하고 순수 POST 전송
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
         body: JSON.stringify(payload)
       })
       .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP 오류 상태: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`HTTP 상태: ${res.status}`);
         return res.json();
       })
       .then(data => {
@@ -251,8 +246,8 @@ const StudentFlow = {
       })
       .catch(err => {
         App.hideLoading();
-        console.error("접수 등록 통신 에러:", err);
-        alert(`서버 통신 오류가 발생했습니다.\n\n[확인사항]\n1. GAS 배포 권한이 '모든 사용자(Anyone)'인지 확인해주세요.\n2. GAS 편집기에서 setupDatabase 실행을 통해 구글 권한 승인이 완료되었는지 확인해주세요.\n\n(상세 내용: ${err.message})`);
+        console.error("접수 등록 통신 오류:", err);
+        alert(`서버 통신 오류가 발생했습니다. (상세 내용: ${err.message})`);
       });
     }
   },
@@ -353,15 +348,12 @@ const TeacherFlow = {
         TeacherFlow.openDashboard();
       }, 500);
     } else {
-      // PREFLIGHT(OPTIONS) 차단을 방지하기 위해 headers 생략
       fetch(CONFIG.GAS_WEB_APP_URL, {
         method: "POST",
         body: JSON.stringify({ action: "adminLogin", password: password })
       })
       .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP 응답 에러: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`HTTP 응답 에러: ${res.status}`);
         return res.json();
       })
       .then(data => {
@@ -379,8 +371,8 @@ const TeacherFlow = {
       })
       .catch(err => {
         App.hideLoading();
-        console.error("로그인 연동 통신 에러:", err);
-        alert(`관리자 로그인 통신 에러가 발생했습니다.\n\nGAS 배포 옵션의 액세스 권한이 '모든 사용자(Anyone)'로 되었는지 점검해 주세요.\n(상세 내용: ${err.message})`);
+        console.error("로그인 연동 오류:", err);
+        alert(`관리자 로그인 통신 에러가 발생했습니다. (상세 내용: ${err.message})`);
       });
     }
   },
@@ -393,7 +385,7 @@ const TeacherFlow = {
   },
 
   switchTab(tabName) {
-    ["dashboard", "kanban", "stats", "ai"].forEach(t => {
+    ["dashboard", "kanban", "stats"].forEach(t => {
       const btn = document.getElementById(`tab-btn-${t}`);
       const tabContent = document.getElementById(`teacher-tab-${t}`);
       
@@ -512,8 +504,10 @@ const TeacherFlow = {
 
   renderStats() {
     const containerType = document.getElementById("chart-type-ratios");
+    const containerHourly = document.getElementById("chart-hourly-peaks");
     const total = state.requests.length || 1;
 
+    // 1. 방문 유형별 비율 시각화
     containerType.innerHTML = "";
     Object.values(CONFIG.VISIT_TYPES).forEach(type => {
       const cnt = state.requests.filter(r => r.visit_type === type.id).length;
@@ -532,168 +526,42 @@ const TeacherFlow = {
       `;
       containerType.appendChild(row);
     });
-  },
 
-  runGeminiAnalysis() {
-    App.showLoading("Gemini AI가 보건실 방문 통계 데이터를 분석 중입니다...");
+    // 2. 시간대별 접수 피크 분포 시각화
+    const hourlyCounts = {};
+    for (let h = 9; h <= 16; h++) {
+      const slot = `${String(h).padStart(2, '0')}:00`;
+      hourlyCounts[slot] = 0;
+    }
 
-    if (state.isMockMode) {
-      setTimeout(() => {
-        App.hideLoading();
-        TeacherFlow.renderAiResults(CONFIG.MOCK_DATA.ai_response);
-      }, 1000);
-    } else {
-      fetch(CONFIG.GAS_WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "runGeminiAnalysis", token: state.authToken })
-      })
-      .then(res => res.json())
-      .then(data => {
-        App.hideLoading();
-        if (data.status === "ERROR") {
-          alert(`AI 분석 오류: ${data.message}`);
-          if (data.calculated_stats) {
-            TeacherFlow.renderAiResults(data);
-          }
-        } else {
-          TeacherFlow.renderAiResults(data);
+    state.requests.forEach(r => {
+      if (r.timestamp) {
+        const hour = new Date(r.timestamp).getHours();
+        const slot = `${String(hour).padStart(2, '0')}:00`;
+        if (hourlyCounts[slot] !== undefined) {
+          hourlyCounts[slot]++;
         }
-      })
-      .catch(err => {
-        App.hideLoading();
-        alert("Gemini AI 분석 연동 중 통신 에러가 발생했습니다.");
-      });
-    }
-  },
+      }
+    });
 
-  renderAiResults(res) {
-    const container = document.getElementById("container-ai-results");
-    
-    if (res.status === "ERROR" && !res.calculated_stats) {
-      container.innerHTML = `
-        <div class="p-6 bg-red-50 border border-red-200 rounded-2xl text-center space-y-2">
-          <p class="text-sm font-bold text-red-800">⚠️ AI 분석을 실행할 수 없습니다</p>
-          <p class="text-xs text-red-600">${res.message || "오류가 발생했습니다."}</p>
+    const maxCount = Math.max(...Object.values(hourlyCounts), 1);
+
+    containerHourly.innerHTML = "";
+    Object.entries(hourlyCounts).forEach(([slot, cnt]) => {
+      const pct = Math.round((cnt / maxCount) * 100);
+      const row = document.createElement("div");
+      row.className = "space-y-1";
+      row.innerHTML = `
+        <div class="flex justify-between text-xs font-bold">
+          <span>${slot} 시간대</span>
+          <span>${cnt}건</span>
+        </div>
+        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+          <div class="bg-blue-500 h-full" style="width: ${pct}%"></div>
         </div>
       `;
-      return;
-    }
-
-    const calc = res.calculated_stats || { visit_type_ratios: {}, hourly_counts: {}, day_of_week_counts: {} };
-    const ai = res.ai_analysis;
-
-    let html = `
-      <div class="bg-slate-900 text-white rounded-2xl p-6 space-y-4 shadow-lg">
-        <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-          <span class="text-xs font-bold text-emerald-400">📊 100% 검증된 실제 집계 통계 (GAS 계산 Engine)</span>
-          <span class="text-xs text-slate-400">총 누적: <strong class="text-white">${calc.total_count || 0}건</strong></span>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
-            <p class="font-bold text-slate-300">방문 유형별 집계 비율</p>
-            <div class="space-y-1">
-              ${Object.entries(calc.visit_type_ratios || {}).map(([name, item]) => `
-                <div class="flex justify-between">
-                  <span class="text-slate-400">${name}:</span>
-                  <span class="font-bold text-emerald-400">${item.count}건 (${item.ratio})</span>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-
-          <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
-            <p class="font-bold text-slate-300">시간대별 접수량</p>
-            <div class="space-y-1">
-              ${Object.keys(calc.hourly_counts || {}).length === 0 ? `<p class="text-slate-500">기록 없음</p>` : ""}
-              ${Object.entries(calc.hourly_counts || {}).map(([hour, cnt]) => `
-                <div class="flex justify-between">
-                  <span class="text-slate-400">${hour}:</span>
-                  <span class="font-bold text-cyan-400">${cnt}건</span>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-
-          <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
-            <p class="font-bold text-slate-300">요일별 방문 패턴</p>
-            <div class="space-y-1">
-              ${Object.entries(calc.day_of_week_counts || {}).map(([day, cnt]) => `
-                <div class="flex justify-between">
-                  <span class="text-slate-400">${day}요일:</span>
-                  <span class="font-bold text-purple-400">${cnt}건</span>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    if (ai) {
-      html += `
-        <div class="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-6 space-y-5 shadow-sm">
-          <div class="flex justify-between items-center border-b border-indigo-200 pb-3">
-            <div class="flex items-center space-x-2">
-              <span class="text-lg">✨</span>
-              <h4 class="font-bold text-indigo-950 text-base">Gemini 2.5 Flash AI 인사이트 리포트</h4>
-            </div>
-            <span class="text-xs text-indigo-700 font-semibold bg-indigo-100 px-3 py-1 rounded-full">분석 시각: ${res.analyzed_at || "방금 전"}</span>
-          </div>
-
-          <div class="bg-white p-4 rounded-xl border border-indigo-100 shadow-xs">
-            <p class="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">AI 1줄 총평</p>
-            <p class="text-sm font-bold text-indigo-950 leading-relaxed">"${ai.ai_summary}"</p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-white p-4 rounded-xl border border-indigo-100 space-y-2">
-              <h5 class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
-                <span>🔥</span><span>혼잡 패턴 분석 & 예측</span>
-              </h5>
-              <p class="text-xs text-slate-700 leading-relaxed"><strong>패턴:</strong> ${ai.peak_hours_analysis}</p>
-              <div class="p-2.5 bg-indigo-50/70 rounded-lg border border-indigo-100">
-                <p class="text-xs text-indigo-900"><strong>🔮 혼잡 예측:</strong> ${ai.peak_hours_prediction}</p>
-              </div>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl border border-indigo-100 space-y-2">
-              <h5 class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
-                <span>🔍</span><span>유형별 혼잡 원인 분석</span>
-              </h5>
-              <p class="text-xs text-slate-700 leading-relaxed">${ai.cause_analysis_by_type}</p>
-            </div>
-          </div>
-
-          <div class="bg-white p-4 rounded-xl border border-indigo-100 space-y-2">
-            <h5 class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
-              <span>💡</span><span>보건실 운영 효율화 제안</span>
-            </h5>
-            <ul class="space-y-1.5 pl-1">
-              ${(ai.operation_recommendations || []).map(rec => `
-                <li class="text-xs text-slate-700 flex items-start space-x-2">
-                  <span class="text-emerald-500 font-bold">✓</span>
-                  <span>${rec}</span>
-                </li>
-              `).join("")}
-            </ul>
-          </div>
-
-          <p class="text-[11px] text-slate-400 text-center pt-2">
-            ※ 본 AI 분석은 실제 집계 수치(GAS)를 바탕으로 Gemini 모델이 생성한 운영 제안이며, 최종 보건 판단 및 관리는 보건교사가 전담합니다.
-          </p>
-        </div>
-      `;
-    } else if (res.status === "ERROR") {
-      html += `
-        <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-1">
-          <p class="font-bold">⚠️ Gemini API 호출 안내: ${res.message}</p>
-          <p class="text-amber-600">위의 상단 실제 집계 통계는 정상적으로 계산되어 제공됩니다.</p>
-        </div>
-      `;
-    }
-
-    container.innerHTML = html;
+      containerHourly.appendChild(row);
+    });
   },
 
   openDetailModal(reqId) {
