@@ -72,7 +72,7 @@ async function fetchApi(action, payload = {}) {
 // ==========================================
 const App = {
   init() {
-    console.log("LABIT 프론트엔드 연동 시스템 초기화");
+    console.log("스마트 보건실 프론트엔드 연동 시스템 초기화");
     
     window.addEventListener("online", App.updateNetworkStatus);
     window.addEventListener("offline", App.updateNetworkStatus);
