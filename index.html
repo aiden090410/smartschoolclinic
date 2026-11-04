@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>스마트 보건실 통합 관리 시스템</title>
 
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js (통계 그래프 시각화) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <link rel="stylesheet" href="style.css">
   <script src="config.js"></script>
 </head>
@@ -52,7 +56,7 @@
       
       <!-- Screen 1: 접수 대기 첫 화면 -->
       <div id="student-step-1" class="bg-white rounded-3xl p-8 sm:p-12 shadow-xl border border-slate-100 text-center space-y-8">
-        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-50 text-emerald-500 text-5xl mb-2 animate-pulse-subtle">
+        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-50 text-emerald-500 text-5xl mb-2 animate-pulse">
           🏥
         </div>
         <div class="space-y-3">
@@ -273,21 +277,126 @@
       <div id="teacher-tab-kanban" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 hidden">
       </div>
 
-      <!-- Tab 3: 방문 통계 화면 -->
-      <div id="teacher-tab-stats" class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6 hidden">
-        <h3 class="text-lg font-bold text-slate-900">보건실 방문 요약 통계</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
-            <h4 class="text-sm font-bold text-slate-700">방문 유형별 비중</h4>
-            <div id="chart-type-ratios" class="space-y-2">
-            </div>
+      <!-- Tab 3: 방문 통계 화면 (개선된 모던 UI) -->
+      <div id="teacher-tab-stats" class="space-y-6 hidden">
+        
+        <!-- 상단 헤더 & 기간 필터 제어바 -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-xl font-black text-slate-900">📊 보건실 방문 통계 대시보드</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Google Sheets DB 실시간 누적 데이터를 기반으로 계산됩니다. (AI 비사용)</p>
           </div>
-          <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
-            <h4 class="text-sm font-bold text-slate-700">시간대별 접수 피크 현황</h4>
-            <div id="chart-hourly-peaks" class="space-y-2">
-            </div>
+          
+          <div class="flex items-center space-x-2">
+            <label for="select-stats-period" class="text-xs font-bold text-slate-600">조회 기간:</label>
+            <select id="select-stats-period" onchange="TeacherFlow.changeStatsPeriod(this.value)" class="p-2.5 rounded-xl border border-slate-300 bg-slate-50 font-bold text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none">
+              <option value="all" selected>전체 누적 기간</option>
+              <option value="today">오늘 (Today)</option>
+              <option value="7days">최근 7일</option>
+              <option value="30days">최근 30일</option>
+            </select>
           </div>
         </div>
+
+        <!-- 7가지 주요 통계 KPI 지표 카드 6종 -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <!-- 카드 1: 전체 누적 접수 -->
+          <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-4 rounded-2xl text-white shadow-lg shadow-emerald-100 space-y-1">
+            <span class="text-xs font-semibold text-emerald-100">전체 접수</span>
+            <div id="stat-card-total" class="text-2xl font-black">0건</div>
+            <p class="text-[10px] text-emerald-100 opacity-90">누적 방문 수치</p>
+          </div>
+
+          <!-- 카드 2: 처치 완료 -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">처치 완료</span>
+            <div id="stat-card-completed" class="text-2xl font-extrabold text-slate-900">0건</div>
+            <p id="stat-card-completed-pct" class="text-[10px] text-slate-400 font-medium">전체 중 0%</p>
+          </div>
+
+          <!-- 카드 3: 대기 / 처치 중 -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+            <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">대기/상담중</span>
+            <div id="stat-card-active" class="text-2xl font-extrabold text-slate-900">0건</div>
+            <p class="text-[10px] text-slate-400 font-medium">현재 진행 상태</p>
+          </div>
+
+          <!-- 카드 4: 취소된 접수 -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+            <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">취소건</span>
+            <div id="stat-card-cancelled" class="text-2xl font-extrabold text-slate-700">0건</div>
+            <p class="text-[10px] text-slate-400 font-medium">실시간 유효 구분</p>
+          </div>
+
+          <!-- 카드 5: 최다 방문 사유 -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 sm:col-span-1">
+            <span class="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">최다 방문 목적</span>
+            <div id="stat-card-top-purpose" class="text-sm font-black text-slate-900 truncate">분석 중</div>
+            <p id="stat-card-top-purpose-detail" class="text-[10px] text-purple-600 font-semibold truncate">가장 빈번한 사유</p>
+          </div>
+
+          <!-- 카드 6: 기간 수치 비교 -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 sm:col-span-1">
+            <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">기간별 추이</span>
+            <div id="stat-card-period-compare" class="text-sm font-black text-slate-900">동일 유지</div>
+            <p id="stat-card-period-compare-sub" class="text-[10px] text-slate-400 font-medium">이전 기간 대비</p>
+          </div>
+        </div>
+
+        <!-- 데이터가 없을 때 표시되는 빈 상태 안내 -->
+        <div id="stats-empty-alert" class="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-3 hidden">
+          <div class="inline-flex p-4 rounded-full bg-slate-100 text-slate-400 text-3xl">📭</div>
+          <h4 class="text-base font-bold text-slate-800">조회된 기간 내 방문 데이터가 없습니다.</h4>
+          <p class="text-xs text-slate-500">학생 접수가 수집되면 실시간 그래프와 수치가 그래프로 출력됩니다.</p>
+        </div>
+
+        <!-- Chart.js 시각화 차트 메인 그리드 3종 -->
+        <div id="stats-charts-container" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- 차트 1: 날짜별 접수 추이 (Line Chart) -->
+          <div class="lg:col-span-2 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center border-b pb-3">
+              <h4 class="font-bold text-slate-900 text-sm flex items-center space-x-2">
+                <span>📈</span>
+                <span>날짜별 접수 추이 (Line Chart)</span>
+              </h4>
+              <span class="text-[11px] font-semibold text-slate-400">일별 방문 수치</span>
+            </div>
+            <div class="h-64 relative">
+              <canvas id="chart-daily-trend"></canvas>
+            </div>
+          </div>
+
+          <!-- 차트 2: 방문 목적별 비율 (Doughnut Chart) -->
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center border-b pb-3">
+              <h4 class="font-bold text-slate-900 text-sm flex items-center space-x-2">
+                <span>🍩</span>
+                <span>방문 목적별 비중</span>
+              </h4>
+              <span class="text-[11px] font-semibold text-slate-400">5가지 카테고리</span>
+            </div>
+            <div class="h-64 relative flex items-center justify-center">
+              <canvas id="chart-purpose-pie"></canvas>
+            </div>
+          </div>
+
+          <!-- 차트 3: 시간대별 접수 현황 피크 (Bar Chart) -->
+          <div class="lg:col-span-3 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center border-b pb-3">
+              <h4 class="font-bold text-slate-900 text-sm flex items-center space-x-2">
+                <span>⏰</span>
+                <span>시간대별 접수 현황 (09:00 ~ 16:00 피크 구간)</span>
+              </h4>
+              <span class="text-[11px] font-semibold text-slate-400">시간대별 혼잡도</span>
+            </div>
+            <div class="h-60 relative">
+              <canvas id="chart-hourly-bar"></canvas>
+            </div>
+          </div>
+
+        </div>
+
       </div>
 
     </section>
@@ -335,7 +444,7 @@
           <ol class="list-decimal pl-5 space-y-2 text-xs font-semibold text-slate-800">
             <li><strong>학생 접수 및 유형별 대기열 이용:</strong> 태블릿 화면에서 학년/반/이름을 입력하고 방문 목적(물품, 휴식, 외상 등)을 선택하여 번호표를 발급받습니다.</li>
             <li><strong>교사용 접수 확인 및 대기열 관리:</strong> 관리자 로그인 후 실시간 대시보드에서 대기 상태 변경(상담 시작, 처치 완료)을 처리합니다.</li>
-            <li><strong>방문 통계 확인 및 조회:</strong> 방문 통계 탭에서 유형별 비율 및 시간대별 접수 피크 데이터를 그래프 형태로 확인합니다.</li>
+            <li><strong>방문 통계 확인 및 조회:</strong> 방문 통계 탭에서 유형별 비율, 날짜별 추이, 시간대별 접수 피크 데이터를 Chart.js 그래프 형태로 확인합니다.</li>
           </ol>
         </div>
 
