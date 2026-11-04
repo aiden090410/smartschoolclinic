@@ -2,8 +2,8 @@
  * 스마트 보건실 통합 관리 시스템 - 전역 설정 파일 (config.js)
  */
 const CONFIG = {
-  // Google Apps Script 웹 앱 배포 URL
-  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbyR6AvSiyiBYbNhFx8pS5UeDKAR2TQ9-oOsE9L8R73Ghdbf01umhgzjH8Fui5DKMDxM/exec", 
+  // Google Apps Script 웹 앱 배포 URL (실제 URL 입력)
+  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbwGIWTfZLoFCQJ1gH3v815eNqHwGJMyivH-2kwQE5NP4T_qBE_9nyW2AedO6kqVrwuC/exec", 
 
   // 타이머 설정 (밀리초 단위)
   TIMERS: {
@@ -100,36 +100,6 @@ const CONFIG = {
         status: "WAITING",
         updated_at: "2026-11-04 13:58:30"
       }
-    ],
-    ai_response: {
-      status: "SUCCESS",
-      data_sufficient: true,
-      analyzed_at: "2026-11-04 14:10:00",
-      calculated_stats: {
-        total_count: 28,
-        unique_days_count: 4,
-        data_sufficient: true,
-        visit_type_ratios: {
-          "간단한 물품 요청": { count: 12, ratio: "42.9%" },
-          "휴식 요청": { count: 7, ratio: "25.0%" },
-          "상처 및 외상 관련": { count: 5, ratio: "17.9%" },
-          "통증 및 신체 이상": { count: 3, ratio: "10.7%" },
-          "기타 및 직접 확인": { count: 1, ratio: "3.5%" }
-        },
-        hourly_counts: { "10:00": 4, "11:00": 3, "12:00": 2, "13:00": 14, "14:00": 5 },
-        day_of_week_counts: { "월": 6, "화": 8, "수": 9, "목": 5, "금": 0 }
-      },
-      ai_analysis: {
-        peak_hours_analysis: "점심시간 직후인 13:00~14:00에 전체 방문의 50% 이상이 집중되는 극심한 혼잡이 관찰됨.",
-        peak_hours_prediction: "수요일 및 목요일 13시~13시 30분 사이 운동장 야외 활동 직후 대기열 피크 발생 예상.",
-        cause_analysis_by_type: "간단 밴드 및 소독약 수령 목적으로 대기하는 학생이 42.9%로 가장 높아 대기열 병목 발생 원인으로 작용함.",
-        operation_recommendations: [
-          "점심시간 10분 전 보건실 입구 '간이 자율 소독/밴드 수령대' 임시 배치 권장",
-          "13시 집중 혼잡 시간대 휴식 요청 학생에 대한 우선 상태 확인 및 침상 배정 체계 적용",
-          "5교시 시작 전 통증 상담 학생의 수업 복귀 안내 파이프라인 구축"
-        ],
-        ai_summary: "간단 물품 수령 학생의 자율 분리를 통해 보건실 대기시간을 최대 40% 단축할 수 있습니다."
-      }
-    }
+    ]
   }
 };
